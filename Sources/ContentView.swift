@@ -2,6 +2,10 @@ import SwiftUI
 import AppKit
 
 struct ContentView: View {
+    private enum Field: Hashable {
+        case symbolName
+    }
+
     @State private var symbolName = "sparkles"
     @State private var foregroundColor = Color.white
     @State private var backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
@@ -12,6 +16,8 @@ struct ContentView: View {
     @State private var shadowStrength = 0.25
     @State private var exportMessage = ""
     @State private var exportSucceeded = false
+    @State private var didActivateWindow = false
+    @FocusState private var focusedField: Field?
 
     private let suggestedSymbols = [
         "sparkles", "wand.and.stars", "bolt.fill", "brain.head.profile",
@@ -26,6 +32,25 @@ struct ContentView: View {
             previewPanel
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .background(WindowAccessor { window in
+            guard let window, !didActivateWindow else { return }
+
+            didActivateWindow = true
+
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+                window.collectionBehavior.insert(.fullScreenPrimary)
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+                focusedField = .symbolName
+                window.makeFirstResponder(nil)
+            }
+        })
+        .onAppear {
+            DispatchQueue.main.async {
+                focusedField = .symbolName
+            }
+        }
     }
 
     private var inspector: some View {
@@ -40,6 +65,7 @@ struct ContentView: View {
 
                     TextField("SF Symbol name", text: $symbolName)
                         .textFieldStyle(.roundedBorder)
+                        .focused($focusedField, equals: .symbolName)
 
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
                         ForEach(suggestedSymbols, id: \.self) { symbol in
@@ -241,6 +267,24 @@ private struct SliderSettingRow: View {
             }
 
             Slider(value: $value, in: range)
+        }
+    }
+}
+
+private struct WindowAccessor: NSViewRepresentable {
+    let onResolve: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            onResolve(view.window)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            onResolve(nsView.window)
         }
     }
 }
