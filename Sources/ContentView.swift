@@ -4,6 +4,14 @@ import AppKit
 struct ContentView: View {
     private enum Field: Hashable {
         case symbolName
+        case emoji
+    }
+
+    private enum IconMode: String, CaseIterable, Identifiable {
+        case sfSymbol = "SF Symbols"
+        case emoji = "Emoji"
+
+        var id: String { rawValue }
     }
 
     private enum VisualSizePreset: String, CaseIterable, Identifiable {
@@ -38,6 +46,8 @@ struct ContentView: View {
 
     @State private var symbolName = "sparkles"
     @State private var symbolQuery = ""
+    @State private var iconMode: IconMode = .sfSymbol
+    @State private var emoji = "🚀"
     @State private var foregroundColor = Color.white
     @State private var backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
     @State private var useGradient = true
@@ -52,7 +62,14 @@ struct ContentView: View {
     @State private var exportMessage = ""
     @State private var exportSucceeded = false
     @State private var didActivateWindow = false
+    @State private var emojiPickerSelectionToken = 0
     @FocusState private var focusedField: Field?
+
+    private let suggestedEmojis = [
+        "🚀", "✨", "🔥", "🎯", "🧠", "🎨", "🪄", "💎",
+        "🌈", "🌙", "☀️", "🍀", "🦄", "🐼", "🍎", "📦",
+        "💬", "📷", "🎵", "🛠️", "🧩", "📚", "🧪", "🎮"
+    ]
 
     private var filteredSymbols: [String] {
         let trimmedQuery = symbolQuery.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -99,38 +116,81 @@ struct ContentView: View {
 
     private var symbolPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SF Symbols")
+            Text("Icon Source")
                 .font(.title2.weight(.semibold))
 
-            Text("Symbol")
-                .font(.headline)
+            Picker("Icon source", selection: $iconMode) {
+                ForEach(IconMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: iconMode) { _, newMode in
+                focusedField = newMode == .sfSymbol ? .symbolName : .emoji
+            }
 
-            TextField("SF Symbol name", text: $symbolName)
-                .textFieldStyle(.roundedBorder)
-                .focused($focusedField, equals: .symbolName)
+            if iconMode == .sfSymbol {
+                Text("Symbol")
+                    .font(.headline)
 
-            TextField("Search symbols", text: $symbolQuery)
-                .textFieldStyle(.roundedBorder)
+                TextField("SF Symbol name", text: $symbolName)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($focusedField, equals: .symbolName)
 
-            Text("Choose a symbol directly from the list below.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                TextField("Search symbols", text: $symbolQuery)
+                    .textFieldStyle(.roundedBorder)
 
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
-                    ForEach(filteredSymbols, id: \.self) { symbol in
-                        SymbolPickerCell(
-                            symbol: symbol,
-                            isSelected: symbol == symbolName
-                        ) {
-                            symbolName = symbol
+                Text("Choose a symbol directly from the list below.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
+                        ForEach(filteredSymbols, id: \.self) { symbol in
+                            SymbolPickerCell(
+                                symbol: symbol,
+                                isSelected: symbol == symbolName
+                            ) {
+                                symbolName = symbol
+                            }
                         }
                     }
+                    .padding(1)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(1)
+            } else {
+                Text("Emoji")
+                    .font(.headline)
+
+                TextField("Emoji", text: $emoji)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($focusedField, equals: .emoji)
+                    .background(SelectAllTextFieldContent(selectionToken: emojiPickerSelectionToken))
+
+                Button("Open System Emoji Picker", action: openEmojiPicker)
+                    .buttonStyle(.bordered)
+
+                Text("Choose one emoji or paste a custom emoji sequence.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 10)], spacing: 10) {
+                        ForEach(suggestedEmojis, id: \.self) { item in
+                            EmojiPickerCell(
+                                emoji: item,
+                                isSelected: item == emoji
+                            ) {
+                                emoji = item
+                            }
+                        }
+                    }
+                    .padding(1)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(1)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(1)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -244,7 +304,7 @@ struct ContentView: View {
                 .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
 
             VStack(spacing: 10) {
-                Text(symbolName)
+                Text(previewTitle)
                     .font(.title3.weight(.semibold))
 
                 Text("Live preview of the generated macOS app icon style.")
@@ -296,7 +356,7 @@ struct ContentView: View {
 
     private func makeRenderer() -> IconRenderer {
         IconRenderer(
-            symbolName: symbolName,
+            content: iconContent,
             foregroundColor: NSColor(foregroundColor),
             backgroundColor: NSColor(backgroundColor),
             secondaryBackgroundColor: NSColor(secondaryBackgroundColor),
@@ -310,6 +370,24 @@ struct ContentView: View {
 
     private func makePreviewImage(size: CGFloat) -> NSImage? {
         try? makeRenderer().render(size: size)
+    }
+
+    private var iconContent: IconRenderer.IconContent {
+        switch iconMode {
+        case .sfSymbol:
+            return .symbol(symbolName)
+        case .emoji:
+            return .emoji(emoji)
+        }
+    }
+
+    private var previewTitle: String {
+        switch iconMode {
+        case .sfSymbol:
+            return symbolName
+        case .emoji:
+            return emoji
+        }
     }
 
     private func applyVisualSizePreset(_ preset: VisualSizePreset) {
@@ -365,6 +443,14 @@ struct ContentView: View {
                 }
             }
         )
+    }
+
+    private func openEmojiPicker() {
+        emojiPickerSelectionToken += 1
+        focusedField = .emoji
+        DispatchQueue.main.async {
+            NSApp.orderFrontCharacterPalette(nil)
+        }
     }
 }
 
@@ -439,6 +525,29 @@ private struct SymbolPickerCell: View {
     }
 }
 
+private struct EmojiPickerCell: View {
+    let emoji: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(emoji)
+                .font(.system(size: 28))
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(isSelected ? Color.accentColor.opacity(0.16) : Color(nsColor: .controlBackgroundColor))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(isSelected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+                }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 private struct WindowAccessor: NSViewRepresentable {
     let onResolve: (NSWindow?) -> Void
 
@@ -453,6 +562,21 @@ private struct WindowAccessor: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {
         DispatchQueue.main.async {
             onResolve(nsView.window)
+        }
+    }
+}
+
+private struct SelectAllTextFieldContent: NSViewRepresentable {
+    let selectionToken: Int
+
+    func makeNSView(context: Context) -> NSView {
+        NSView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            guard let editor = nsView.window?.firstResponder as? NSTextView else { return }
+            editor.selectAll(nil)
         }
     }
 }

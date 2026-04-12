@@ -2,6 +2,11 @@ import AppKit
 import Foundation
 
 struct IconRenderer {
+    enum IconContent {
+        case symbol(String)
+        case emoji(String)
+    }
+
     enum ExportPlatform: String, CaseIterable, Hashable {
         case iphone
         case ipad
@@ -35,6 +40,7 @@ struct IconRenderer {
 
     enum IconRendererError: LocalizedError {
         case missingSymbol(String)
+        case missingEmoji
         case failedBitmapCreation(Int)
         case failedPNGEncoding(String)
 
@@ -42,6 +48,8 @@ struct IconRenderer {
             switch self {
             case .missingSymbol(let symbol):
                 return "SF Symbol '\(symbol)' was not found."
+            case .missingEmoji:
+                return "Emoji content is empty."
             case .failedBitmapCreation(let size):
                 return "Failed to create bitmap for size \(size)x\(size)."
             case .failedPNGEncoding(let filename):
@@ -50,7 +58,7 @@ struct IconRenderer {
         }
     }
 
-    let symbolName: String
+    let content: IconContent
     let foregroundColor: NSColor
     let backgroundColor: NSColor
     let secondaryBackgroundColor: NSColor
@@ -95,10 +103,6 @@ struct IconRenderer {
     ]
 
     func render(size: CGFloat) throws -> NSImage {
-        guard let symbolImage = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else {
-            throw IconRendererError.missingSymbol(symbolName)
-        }
-
         let image = NSImage(size: NSSize(width: size, height: size))
         image.lockFocus()
 
@@ -125,12 +129,48 @@ struct IconRenderer {
             shadow.set()
         }
 
-        let symbolConfig = NSImage.SymbolConfiguration(pointSize: size * symbolScaleRatio, weight: .bold)
-        let configuredSymbol = symbolImage.withSymbolConfiguration(symbolConfig) ?? symbolImage
-        let tintedSymbol = configuredSymbol.withSymbolConfiguration(.init(paletteColors: [foregroundColor])) ?? configuredSymbol
+        switch content {
+        case .symbol(let symbolName):
+            guard let symbolImage = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else {
+                throw IconRendererError.missingSymbol(symbolName)
+            }
 
-        let symbolRect = centeredRect(for: tintedSymbol.size, canvasRect: iconRect)
-        tintedSymbol.draw(in: symbolRect)
+            let symbolConfig = NSImage.SymbolConfiguration(pointSize: size * symbolScaleRatio, weight: .bold)
+            let configuredSymbol = symbolImage.withSymbolConfiguration(symbolConfig) ?? symbolImage
+            let tintedSymbol = configuredSymbol.withSymbolConfiguration(.init(paletteColors: [foregroundColor])) ?? configuredSymbol
+            let symbolRect = centeredRect(for: tintedSymbol.size, canvasRect: iconRect)
+            tintedSymbol.draw(in: symbolRect)
+
+        case .emoji(let emoji):
+            let trimmedEmoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedEmoji.isEmpty else {
+                throw IconRendererError.missingEmoji
+            }
+
+            let emojiRect = centeredSquareRect(in: iconRect, ratio: symbolScaleRatio)
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: emojiRect.height * 0.84),
+                .paragraphStyle: paragraphStyle
+            ]
+
+            let attributedEmoji = NSAttributedString(string: trimmedEmoji, attributes: attributes)
+            let textBounds = attributedEmoji.boundingRect(
+                with: emojiRect.size,
+                options: [.usesLineFragmentOrigin, .usesFontLeading]
+            )
+
+            let drawRect = NSRect(
+                x: emojiRect.minX,
+                y: emojiRect.midY - (textBounds.height / 2),
+                width: emojiRect.width,
+                height: textBounds.height
+            )
+
+            attributedEmoji.draw(in: drawRect)
+        }
 
         image.unlockFocus()
         return image
@@ -205,6 +245,16 @@ struct IconRenderer {
         let originX = canvasRect.midX - (width / 2)
         let originY = canvasRect.midY - (height / 2)
         return NSRect(x: originX, y: originY, width: width, height: height)
+    }
+
+    private func centeredSquareRect(in canvasRect: NSRect, ratio: Double) -> NSRect {
+        let edge = min(canvasRect.width, canvasRect.height) * ratio
+        return NSRect(
+            x: canvasRect.midX - (edge / 2),
+            y: canvasRect.midY - (edge / 2),
+            width: edge,
+            height: edge
+        )
     }
 
     private func makeContentsJSON(specs: [IconSpec]) -> String {
