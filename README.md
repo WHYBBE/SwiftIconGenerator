@@ -2,6 +2,11 @@
 
 一个基于 SwiftUI 的 macOS 小工具，用来把 `SF Symbols` 生成为可直接用于 Swift/Xcode 项目的 `AppIcon.appiconset`。
 
+项目现在同时包含：
+
+- 标准 macOS Xcode 工程：`SFIconGenerator.xcodeproj`
+- 原始 Swift Package 结构，便于命令行构建和迭代
+
 ## 功能
 
 - 输入任意 `SF Symbol` 名称
@@ -13,11 +18,21 @@
 
 ## 运行
 
+推荐方式：
+
+```text
+打开 SFIconGenerator.xcodeproj
+```
+
+然后直接在 Xcode 中运行，工程已绑定标准 `AppIcon` 应用图标。
+
+也可以继续使用命令行：
+
 ```bash
 swift run
 ```
 
-也可以直接用 Xcode 打开该目录作为 Swift Package 运行。
+命令行方式主要用于快速构建；标准 app 图标和资源绑定以 Xcode 工程为准。
 
 ## 导出结果
 
