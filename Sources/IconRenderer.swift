@@ -2,12 +2,33 @@ import AppKit
 import Foundation
 
 struct IconRenderer {
+    enum ExportPlatform: String, CaseIterable, Hashable {
+        case iphone
+        case ipad
+        case appStore
+        case mac
+
+        var title: String {
+            switch self {
+            case .iphone:
+                return "iPhone"
+            case .ipad:
+                return "iPad"
+            case .appStore:
+                return "App Store"
+            case .mac:
+                return "macOS"
+            }
+        }
+    }
+
     struct IconSpec {
         let filename: String
         let idiom: String
         let pointSize: Double
         let pixelSize: Int
         let scale: String
+        let platform: ExportPlatform
         let role: String?
         let subtype: String?
     }
@@ -40,37 +61,37 @@ struct IconRenderer {
     let shadowStrength: Double
 
     private let specs: [IconSpec] = [
-        .init(filename: "appicon-iphone-20@2x.png", idiom: "iphone", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-iphone-20@3x.png", idiom: "iphone", pointSize: 20, pixelSize: 60, scale: "3x", role: nil, subtype: nil),
-        .init(filename: "appicon-iphone-29@2x.png", idiom: "iphone", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-iphone-29@3x.png", idiom: "iphone", pointSize: 29, pixelSize: 87, scale: "3x", role: nil, subtype: nil),
-        .init(filename: "appicon-iphone-40@2x.png", idiom: "iphone", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-iphone-40@3x.png", idiom: "iphone", pointSize: 40, pixelSize: 120, scale: "3x", role: nil, subtype: nil),
-        .init(filename: "appicon-iphone-60@2x.png", idiom: "iphone", pointSize: 60, pixelSize: 120, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-iphone-60@3x.png", idiom: "iphone", pointSize: 60, pixelSize: 180, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-20@2x.png", idiom: "iphone", pointSize: 20, pixelSize: 40, scale: "2x", platform: .iphone, role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-20@3x.png", idiom: "iphone", pointSize: 20, pixelSize: 60, scale: "3x", platform: .iphone, role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-29@2x.png", idiom: "iphone", pointSize: 29, pixelSize: 58, scale: "2x", platform: .iphone, role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-29@3x.png", idiom: "iphone", pointSize: 29, pixelSize: 87, scale: "3x", platform: .iphone, role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-40@2x.png", idiom: "iphone", pointSize: 40, pixelSize: 80, scale: "2x", platform: .iphone, role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-40@3x.png", idiom: "iphone", pointSize: 40, pixelSize: 120, scale: "3x", platform: .iphone, role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-60@2x.png", idiom: "iphone", pointSize: 60, pixelSize: 120, scale: "2x", platform: .iphone, role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-60@3x.png", idiom: "iphone", pointSize: 60, pixelSize: 180, scale: "3x", platform: .iphone, role: nil, subtype: nil),
 
-        .init(filename: "appicon-ipad-20@1x.png", idiom: "ipad", pointSize: 20, pixelSize: 20, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-20@2x.png", idiom: "ipad", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-29@1x.png", idiom: "ipad", pointSize: 29, pixelSize: 29, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-29@2x.png", idiom: "ipad", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-40@1x.png", idiom: "ipad", pointSize: 40, pixelSize: 40, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-40@2x.png", idiom: "ipad", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-76@1x.png", idiom: "ipad", pointSize: 76, pixelSize: 76, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-76@2x.png", idiom: "ipad", pointSize: 76, pixelSize: 152, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-ipad-83.5@2x.png", idiom: "ipad", pointSize: 83.5, pixelSize: 167, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-20@1x.png", idiom: "ipad", pointSize: 20, pixelSize: 20, scale: "1x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-20@2x.png", idiom: "ipad", pointSize: 20, pixelSize: 40, scale: "2x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-29@1x.png", idiom: "ipad", pointSize: 29, pixelSize: 29, scale: "1x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-29@2x.png", idiom: "ipad", pointSize: 29, pixelSize: 58, scale: "2x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-40@1x.png", idiom: "ipad", pointSize: 40, pixelSize: 40, scale: "1x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-40@2x.png", idiom: "ipad", pointSize: 40, pixelSize: 80, scale: "2x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-76@1x.png", idiom: "ipad", pointSize: 76, pixelSize: 76, scale: "1x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-76@2x.png", idiom: "ipad", pointSize: 76, pixelSize: 152, scale: "2x", platform: .ipad, role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-83.5@2x.png", idiom: "ipad", pointSize: 83.5, pixelSize: 167, scale: "2x", platform: .ipad, role: nil, subtype: nil),
 
-        .init(filename: "appicon-appstore-1024.png", idiom: "ios-marketing", pointSize: 1024, pixelSize: 1024, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-appstore-1024.png", idiom: "ios-marketing", pointSize: 1024, pixelSize: 1024, scale: "1x", platform: .appStore, role: nil, subtype: nil),
 
-        .init(filename: "appicon-mac-16@1x.png", idiom: "mac", pointSize: 16, pixelSize: 16, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-16@2x.png", idiom: "mac", pointSize: 16, pixelSize: 32, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-32@1x.png", idiom: "mac", pointSize: 32, pixelSize: 32, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-32@2x.png", idiom: "mac", pointSize: 32, pixelSize: 64, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-128@1x.png", idiom: "mac", pointSize: 128, pixelSize: 128, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-128@2x.png", idiom: "mac", pointSize: 128, pixelSize: 256, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-256@1x.png", idiom: "mac", pointSize: 256, pixelSize: 256, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-256@2x.png", idiom: "mac", pointSize: 256, pixelSize: 512, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-512@1x.png", idiom: "mac", pointSize: 512, pixelSize: 512, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "appicon-mac-512@2x.png", idiom: "mac", pointSize: 512, pixelSize: 1024, scale: "2x", role: nil, subtype: nil)
+        .init(filename: "appicon-mac-16@1x.png", idiom: "mac", pointSize: 16, pixelSize: 16, scale: "1x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-16@2x.png", idiom: "mac", pointSize: 16, pixelSize: 32, scale: "2x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-32@1x.png", idiom: "mac", pointSize: 32, pixelSize: 32, scale: "1x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-32@2x.png", idiom: "mac", pointSize: 32, pixelSize: 64, scale: "2x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-128@1x.png", idiom: "mac", pointSize: 128, pixelSize: 128, scale: "1x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-128@2x.png", idiom: "mac", pointSize: 128, pixelSize: 256, scale: "2x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-256@1x.png", idiom: "mac", pointSize: 256, pixelSize: 256, scale: "1x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-256@2x.png", idiom: "mac", pointSize: 256, pixelSize: 512, scale: "2x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-512@1x.png", idiom: "mac", pointSize: 512, pixelSize: 512, scale: "1x", platform: .mac, role: nil, subtype: nil),
+        .init(filename: "appicon-mac-512@2x.png", idiom: "mac", pointSize: 512, pixelSize: 1024, scale: "2x", platform: .mac, role: nil, subtype: nil)
     ]
 
     func render(size: CGFloat) throws -> NSImage {
@@ -115,9 +136,10 @@ struct IconRenderer {
         return image
     }
 
-    func exportAppIconSet(named iconSetName: String, to folderURL: URL) throws -> URL {
+    func exportAppIconSet(named iconSetName: String, platforms: Set<ExportPlatform>, to folderURL: URL) throws -> URL {
         let fileManager = FileManager.default
         let appIconSetURL = folderURL.appendingPathComponent(iconSetName, isDirectory: true)
+        let filteredSpecs = specs.filter { platforms.contains($0.platform) }
 
         if fileManager.fileExists(atPath: appIconSetURL.path) {
             try fileManager.removeItem(at: appIconSetURL)
@@ -125,13 +147,13 @@ struct IconRenderer {
 
         try fileManager.createDirectory(at: appIconSetURL, withIntermediateDirectories: true)
 
-        for spec in specs {
+        for spec in filteredSpecs {
             let image = try render(size: CGFloat(spec.pixelSize))
             let fileURL = appIconSetURL.appendingPathComponent(spec.filename)
             try writePNG(image: image, to: fileURL, pixelSize: spec.pixelSize)
         }
 
-        let contents = makeContentsJSON()
+        let contents = makeContentsJSON(specs: filteredSpecs)
         let contentsURL = appIconSetURL.appendingPathComponent("Contents.json")
         try contents.write(to: contentsURL, atomically: true, encoding: .utf8)
 
@@ -185,7 +207,7 @@ struct IconRenderer {
         return NSRect(x: originX, y: originY, width: width, height: height)
     }
 
-    private func makeContentsJSON() -> String {
+    private func makeContentsJSON(specs: [IconSpec]) -> String {
         let images = specs.map { spec in
             var fields = [
                 "\"filename\" : \"\(spec.filename)\"",

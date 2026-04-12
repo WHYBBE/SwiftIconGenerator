@@ -48,6 +48,7 @@ struct ContentView: View {
     @State private var symbolScaleRatio = 0.44
     @State private var shadowStrength = 0.25
     @State private var iconSetName = "AppIcon"
+    @State private var exportPlatforms: Set<IconRenderer.ExportPlatform> = Set(IconRenderer.ExportPlatform.allCases)
     @State private var exportMessage = ""
     @State private var exportSucceeded = false
     @State private var didActivateWindow = false
@@ -202,6 +203,15 @@ struct ContentView: View {
                     TextField("Icon set name", text: $iconSetName)
                         .textFieldStyle(.roundedBorder)
 
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Export channels")
+                            .font(.headline)
+
+                        ForEach(IconRenderer.ExportPlatform.allCases, id: \.self) { platform in
+                            Toggle(platform.title, isOn: binding(for: platform))
+                        }
+                    }
+
                     Button("Export Xcode AppIcon.appiconset", action: exportIconSet)
                         .buttonStyle(.borderedProminent)
 
@@ -321,7 +331,11 @@ struct ContentView: View {
         }
 
         do {
-            let exportURL = try makeRenderer().exportAppIconSet(named: normalizedIconSetName, to: folderURL)
+            let exportURL = try makeRenderer().exportAppIconSet(
+                named: normalizedIconSetName,
+                platforms: normalizedExportPlatforms,
+                to: folderURL
+            )
             exportSucceeded = true
             exportMessage = "Exported to \(exportURL.path)"
         } catch {
@@ -334,6 +348,23 @@ struct ContentView: View {
         let trimmed = iconSetName.trimmingCharacters(in: .whitespacesAndNewlines)
         let baseName = trimmed.isEmpty ? "AppIcon" : trimmed
         return baseName.hasSuffix(".appiconset") ? baseName : "\(baseName).appiconset"
+    }
+
+    private var normalizedExportPlatforms: Set<IconRenderer.ExportPlatform> {
+        exportPlatforms.isEmpty ? Set(IconRenderer.ExportPlatform.allCases) : exportPlatforms
+    }
+
+    private func binding(for platform: IconRenderer.ExportPlatform) -> Binding<Bool> {
+        Binding(
+            get: { exportPlatforms.contains(platform) },
+            set: { isEnabled in
+                if isEnabled {
+                    exportPlatforms.insert(platform)
+                } else {
+                    exportPlatforms.remove(platform)
+                }
+            }
+        )
     }
 }
 

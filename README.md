@@ -9,6 +9,7 @@
 - 调整前景色、背景色、渐变、圆角、内容留白、图标缩放、阴影
 - 实时预览导出效果
 - 一键导出适用于 Xcode 的 `AppIcon.appiconset`，覆盖 iPhone、iPad、App Store 和 macOS
+- 导出时可按渠道筛选 iPhone、iPad、App Store、macOS
 
 ## 运行
 
