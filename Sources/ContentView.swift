@@ -66,7 +66,9 @@ struct ContentView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            inspector
+            symbolPanel
+            Divider()
+            settingsPanel
             Divider()
             previewPanel
         }
@@ -93,43 +95,50 @@ struct ContentView: View {
         }
     }
 
-    private var inspector: some View {
+    private var symbolPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("SF Symbols")
+                .font(.title2.weight(.semibold))
+
+            Text("Symbol")
+                .font(.headline)
+
+            TextField("SF Symbol name", text: $symbolName)
+                .textFieldStyle(.roundedBorder)
+                .focused($focusedField, equals: .symbolName)
+
+            TextField("Search symbols", text: $symbolQuery)
+                .textFieldStyle(.roundedBorder)
+
+            Text("Choose a symbol directly from the list below.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
+                    ForEach(filteredSymbols, id: \.self) { symbol in
+                        SymbolPickerCell(
+                            symbol: symbol,
+                            isSelected: symbol == symbolName
+                        ) {
+                            symbolName = symbol
+                        }
+                    }
+                }
+                .padding(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(1)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var settingsPanel: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("SF Symbols Icon Generator")
-                    .font(.largeTitle.weight(.semibold))
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Symbol")
-                        .font(.headline)
-
-                    TextField("SF Symbol name", text: $symbolName)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($focusedField, equals: .symbolName)
-
-                    TextField("Search symbols", text: $symbolQuery)
-                        .textFieldStyle(.roundedBorder)
-
-                    Text("Choose a symbol directly from the list below.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-
-                    ScrollView {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
-                            ForEach(filteredSymbols, id: \.self) { symbol in
-                                SymbolPickerCell(
-                                    symbol: symbol,
-                                    isSelected: symbol == symbolName
-                                ) {
-                                    symbolName = symbol
-                                }
-                            }
-                        }
-                        .padding(1)
-                    }
-                    .frame(height: 220)
-                    .padding(1)
-                }
+                Text("Configuration")
+                    .font(.title2.weight(.semibold))
 
                 GroupBox("Appearance") {
                     VStack(alignment: .leading, spacing: 16) {
@@ -206,35 +215,40 @@ struct ContentView: View {
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: 360)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var previewPanel: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        VStack(spacing: 20) {
+            Text("Preview")
+                .font(.title2.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            iconPreview(size: 256)
-                .shadow(color: .black.opacity(0.12), radius: 24, y: 10)
+            Spacer(minLength: 0)
 
-            VStack(spacing: 12) {
+            iconPreview(size: 196)
+                .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
+
+            VStack(spacing: 10) {
                 Text(symbolName)
                     .font(.title3.weight(.semibold))
 
                 Text("Live preview of the generated macOS app icon style.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
 
-            HStack(spacing: 18) {
-                ForEach([32.0, 64.0, 128.0], id: \.self) { size in
+            HStack(spacing: 14) {
+                ForEach([32.0, 64.0, 96.0], id: \.self) { size in
                     iconPreview(size: size)
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(32)
+        .padding(24)
         .background(
             LinearGradient(
                 colors: [
