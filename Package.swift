@@ -2,16 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "SFIconGenerator",
+    name: "SwiftIconGenerator",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "SFIconGenerator", targets: ["SFIconGeneratorApp"])
+        .executable(name: "SwiftIconGenerator", targets: ["SwiftIconGeneratorApp"])
     ],
     targets: [
         .executableTarget(
-            name: "SFIconGeneratorApp",
+            name: "SwiftIconGeneratorApp",
             path: "Sources"
         )
     ]

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A000000B2C3D4E5F00000010 /* SFIconGeneratorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000020 /* SFIconGeneratorApp.swift */; };
+		A000000B2C3D4E5F00000010 /* SwiftIconGeneratorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000020 /* SwiftIconGeneratorApp.swift */; };
 		A000000B2C3D4E5F00000011 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000021 /* ContentView.swift */; };
 		A000000B2C3D4E5F00000012 /* IconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000022 /* IconRenderer.swift */; };
 		A000000B2C3D4E5F00000013 /* SFSymbolCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000023 /* SFSymbolCatalog.swift */; };
@@ -17,14 +17,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A000000B2C3D4E5F00000001 /* SFIconGenerator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SFIconGenerator.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A000000B2C3D4E5F00000020 /* SFIconGeneratorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/SFIconGeneratorApp.swift; sourceTree = SOURCE_ROOT; };
+		A000000B2C3D4E5F00000001 /* SwiftIconGenerator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftIconGenerator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A000000B2C3D4E5F00000020 /* SwiftIconGeneratorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/SwiftIconGeneratorApp.swift; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000021 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ContentView.swift; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000022 /* IconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/IconRenderer.swift; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000023 /* SFSymbolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/SFSymbolCatalog.swift; sourceTree = SOURCE_ROOT; };
-		A000000B2C3D4E5F00000024 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SFIconGenerator/Assets.xcassets; sourceTree = SOURCE_ROOT; };
-		A000000B2C3D4E5F00000025 /* AppIcon.appiconset */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SFIconGenerator/Assets.xcassets/AppIcon.appiconset; sourceTree = SOURCE_ROOT; };
-		A000000B2C3D4E5F00000026 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = SFIconGenerator/Info.plist; sourceTree = SOURCE_ROOT; };
+		A000000B2C3D4E5F00000024 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SwiftIconGenerator/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		A000000B2C3D4E5F00000025 /* AppIcon.appiconset */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SwiftIconGenerator/Assets.xcassets/AppIcon.appiconset; sourceTree = SOURCE_ROOT; };
+		A000000B2C3D4E5F00000026 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = SwiftIconGenerator/Info.plist; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,7 +50,7 @@
 		A000000B2C3D4E5F00000041 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				A000000B2C3D4E5F00000020 /* SFIconGeneratorApp.swift */,
+				A000000B2C3D4E5F00000020 /* SwiftIconGeneratorApp.swift */,
 				A000000B2C3D4E5F00000021 /* ContentView.swift */,
 				A000000B2C3D4E5F00000022 /* IconRenderer.swift */,
 				A000000B2C3D4E5F00000023 /* SFSymbolCatalog.swift */,
@@ -58,19 +58,19 @@
 			path = Sources;
 			sourceTree = SOURCE_ROOT;
 		};
-		A000000B2C3D4E5F00000042 /* SFIconGenerator */ = {
+		A000000B2C3D4E5F00000042 /* SwiftIconGenerator */ = {
 			isa = PBXGroup;
 			children = (
 				A000000B2C3D4E5F00000024 /* Assets.xcassets */,
 				A000000B2C3D4E5F00000026 /* Info.plist */,
 			);
-			path = SFIconGenerator;
+			path = SwiftIconGenerator;
 			sourceTree = SOURCE_ROOT;
 		};
 		A000000B2C3D4E5F00000043 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A000000B2C3D4E5F00000001 /* SFIconGenerator.app */,
+				A000000B2C3D4E5F00000001 /* SwiftIconGenerator.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -78,9 +78,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A000000B2C3D4E5F00000002 /* SFIconGenerator */ = {
+		A000000B2C3D4E5F00000002 /* SwiftIconGenerator */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A000000B2C3D4E5F00000060 /* Build configuration list for PBXNativeTarget "SFIconGenerator" */;
+			buildConfigurationList = A000000B2C3D4E5F00000060 /* Build configuration list for PBXNativeTarget "SwiftIconGenerator" */;
 			buildPhases = (
 				A000000B2C3D4E5F00000031 /* Sources */,
 				A000000B2C3D4E5F00000030 /* Frameworks */,
@@ -90,9 +90,9 @@
 			);
 			dependencies = (
 			);
-			name = SFIconGenerator;
-			productName = SFIconGenerator;
-			productReference = A000000B2C3D4E5F00000001 /* SFIconGenerator.app */;
+			name = SwiftIconGenerator;
+			productName = SwiftIconGenerator;
+			productReference = A000000B2C3D4E5F00000001 /* SwiftIconGenerator.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -110,7 +110,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A000000B2C3D4E5F00000061 /* Build configuration list for PBXProject "SFIconGenerator" */;
+			buildConfigurationList = A000000B2C3D4E5F00000061 /* Build configuration list for PBXProject "SwiftIconGenerator" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -122,8 +122,8 @@
 			productRefGroup = A000000B2C3D4E5F00000043 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (
-				A000000B2C3D4E5F00000002 /* SFIconGenerator */,
+				targets = (
+				A000000B2C3D4E5F00000002 /* SwiftIconGenerator */,
 			);
 		};
 /* End PBXProject section */
@@ -144,7 +144,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000B2C3D4E5F00000010 /* SFIconGeneratorApp.swift in Sources */,
+				A000000B2C3D4E5F00000010 /* SwiftIconGeneratorApp.swift in Sources */,
 				A000000B2C3D4E5F00000011 /* ContentView.swift in Sources */,
 				A000000B2C3D4E5F00000012 /* IconRenderer.swift in Sources */,
 				A000000B2C3D4E5F00000013 /* SFSymbolCatalog.swift in Sources */,
@@ -164,14 +164,14 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = SFIconGenerator/Info.plist;
+				INFOPLIST_FILE = SwiftIconGenerator/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = tom.dev.SFIconGenerator;
+				PRODUCT_BUNDLE_IDENTIFIER = tom.dev.SwiftIconGenerator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -188,14 +188,14 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = SFIconGenerator/Info.plist;
+				INFOPLIST_FILE = SwiftIconGenerator/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = tom.dev.SFIconGenerator;
+				PRODUCT_BUNDLE_IDENTIFIER = tom.dev.SwiftIconGenerator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -225,7 +225,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A000000B2C3D4E5F00000060 /* Build configuration list for PBXNativeTarget "SFIconGenerator" */ = {
+		A000000B2C3D4E5F00000060 /* Build configuration list for PBXNativeTarget "SwiftIconGenerator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A000000B2C3D4E5F00000070 /* Debug */,
@@ -234,7 +234,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A000000B2C3D4E5F00000061 /* Build configuration list for PBXProject "SFIconGenerator" */ = {
+		A000000B2C3D4E5F00000061 /* Build configuration list for PBXProject "SwiftIconGenerator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A000000B2C3D4E5F00000072 /* Debug */,
