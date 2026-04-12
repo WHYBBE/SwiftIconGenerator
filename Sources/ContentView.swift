@@ -7,6 +7,7 @@ struct ContentView: View {
     }
 
     @State private var symbolName = "sparkles"
+    @State private var symbolQuery = ""
     @State private var foregroundColor = Color.white
     @State private var backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
     @State private var useGradient = true
@@ -19,11 +20,17 @@ struct ContentView: View {
     @State private var didActivateWindow = false
     @FocusState private var focusedField: Field?
 
-    private let suggestedSymbols = [
-        "sparkles", "wand.and.stars", "bolt.fill", "brain.head.profile",
-        "shippingbox.fill", "camera.macro", "moon.stars.fill", "paperplane.fill",
-        "paintpalette.fill", "heart.fill", "leaf.fill", "globe.americas.fill"
-    ]
+    private var filteredSymbols: [String] {
+        let trimmedQuery = symbolQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedQuery.isEmpty else {
+            return SFSymbolCatalog.all
+        }
+
+        return SFSymbolCatalog.all.filter {
+            $0.localizedCaseInsensitiveContains(trimmedQuery)
+        }
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -67,19 +74,28 @@ struct ContentView: View {
                         .textFieldStyle(.roundedBorder)
                         .focused($focusedField, equals: .symbolName)
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
-                        ForEach(suggestedSymbols, id: \.self) { symbol in
-                            Button {
-                                symbolName = symbol
-                            } label: {
-                                Label(symbol, systemImage: symbol)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                    TextField("Search symbols", text: $symbolQuery)
+                        .textFieldStyle(.roundedBorder)
+
+                    Text("Choose a symbol directly from the list below.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
+                            ForEach(filteredSymbols, id: \.self) { symbol in
+                                SymbolPickerCell(
+                                    symbol: symbol,
+                                    isSelected: symbol == symbolName
+                                ) {
+                                    symbolName = symbol
+                                }
                             }
-                            .buttonStyle(.bordered)
                         }
+                        .padding(1)
                     }
+                    .frame(height: 220)
+                    .padding(1)
                 }
 
                 GroupBox("Appearance") {
@@ -268,6 +284,42 @@ private struct SliderSettingRow: View {
 
             Slider(value: $value, in: range)
         }
+    }
+}
+
+private struct SymbolPickerCell: View {
+    let symbol: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: symbol)
+                    .font(.system(size: 13, weight: .medium))
+                    .frame(width: 18, height: 18)
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+
+                Text(symbol)
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.16) : Color(nsColor: .controlBackgroundColor))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(isSelected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -1,0 +1,41 @@
+import Foundation
+
+enum SFSymbolCatalog {
+    static let all = [
+        "sparkles", "wand.and.stars", "wand.and.rays", "magicmouse", "paintbrush.fill",
+        "paintpalette.fill", "scribble.variable", "pencil.and.scribble", "lasso.badge.sparkles",
+        "camera.macro", "camera.filters", "camera.aperture", "photo.artframe", "crop.rotate",
+        "heart.fill", "heart.circle.fill", "star.fill", "star.circle.fill", "moon.stars.fill",
+        "sun.max.fill", "cloud.sun.fill", "cloud.moon.fill", "cloud.rain.fill", "snowflake",
+        "bolt.fill", "bolt.circle.fill", "flashlight.on.fill", "flame.fill", "drop.fill",
+        "leaf.fill", "tree.fill", "globe.americas.fill", "globe.europe.africa.fill", "map.fill",
+        "location.fill", "mappin.circle.fill", "paperplane.fill", "paperplane.circle.fill",
+        "envelope.fill", "message.fill", "phone.fill", "video.fill", "mic.fill",
+        "music.note", "music.note.list", "headphones", "speaker.wave.3.fill", "play.rectangle.fill",
+        "pause.rectangle.fill", "stop.circle.fill", "forward.fill", "backward.fill", "shuffle",
+        "repeat", "gamecontroller.fill", "arcade.stick.console.fill", "figure.run", "figure.walk",
+        "bicycle", "car.fill", "tram.fill", "airplane", "ferry.fill",
+        "shippingbox.fill", "archivebox.fill", "bag.fill", "cart.fill", "basket.fill",
+        "gift.fill", "creditcard.fill", "banknote.fill", "tag.fill", "ticket.fill",
+        "building.2.fill", "house.fill", "storefront.fill", "bed.double.fill", "lamp.desk.fill",
+        "fork.knife", "cup.and.saucer.fill", "takeoutbag.and.cup.and.straw.fill", "birthday.cake.fill",
+        "brain.head.profile", "brain.fill", "atom", "ant.fill", "ladybug.fill",
+        "pawprint.fill", "hare.fill", "tortoise.fill", "fish.fill", "bird.fill",
+        "book.fill", "books.vertical.fill", "newspaper.fill", "doc.text.fill", "folder.fill",
+        "tray.full.fill", "externaldrive.fill", "internaldrive.fill", "display", "laptopcomputer",
+        "desktopcomputer", "cpu.fill", "memorychip.fill", "keyboard.fill", "printer.fill",
+        "scanner.fill", "wifi", "antenna.radiowaves.left.and.right", "network", "lock.shield.fill",
+        "shield.fill", "key.fill", "person.fill", "person.2.fill", "person.3.fill",
+        "person.crop.circle.fill", "figure.stand", "figure.seated.side", "figure.2.and.child.holdinghands",
+        "hand.raised.fill", "hand.thumbsup.fill", "hand.tap.fill", "eye.fill", "eyeglasses",
+        "face.smiling.fill", "theatermasks.fill", "balloon.2.fill", "party.popper.fill", "fireworks",
+        "clock.fill", "timer", "alarm.fill", "calendar", "calendar.badge.plus",
+        "checkmark.circle.fill", "xmark.circle.fill", "exclamationmark.triangle.fill", "questionmark.circle.fill",
+        "info.circle.fill", "gearshape.fill", "slider.horizontal.3", "wrench.and.screwdriver.fill", "hammer.fill",
+        "barcode.viewfinder", "qrcode.viewfinder", "magnifyingglass", "binoculars.fill", "scope",
+        "chart.bar.fill", "chart.pie.fill", "chart.line.uptrend.xyaxis", "waveform.path.ecg", "speedometer",
+        "list.bullet.rectangle.fill", "tablecells.fill", "rectangle.grid.2x2.fill", "square.grid.3x3.fill",
+        "sidebar.left", "dock.rectangle", "app.badge.fill", "command", "option",
+        "return", "capslock.fill", "delete.left.fill", "escape", "power"
+    ]
+}
