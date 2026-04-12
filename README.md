@@ -28,22 +28,22 @@ AppIcon.appiconset/
 
 其中包含 Xcode 常用的 app icon 尺寸，例如：
 
-- `iphone-app-60@2x.png`
-- `iphone-app-60@3x.png`
-- `ipad-app-76@1x.png`
-- `ipad-app-76@2x.png`
-- `ipad-pro-app-83.5@2x.png`
-- `ios-marketing-1024@1x.png`
-- `mac-16@1x.png`
-- `mac-16@2x.png`
-- `mac-32@1x.png`
-- `mac-32@2x.png`
-- `mac-128@1x.png`
-- `mac-128@2x.png`
-- `mac-256@1x.png`
-- `mac-256@2x.png`
-- `mac-512@1x.png`
-- `mac-512@2x.png`
+- `appicon-iphone-60@2x.png`
+- `appicon-iphone-60@3x.png`
+- `appicon-ipad-76@1x.png`
+- `appicon-ipad-76@2x.png`
+- `appicon-ipad-83.5@2x.png`
+- `appicon-appstore-1024.png`
+- `appicon-mac-16@1x.png`
+- `appicon-mac-16@2x.png`
+- `appicon-mac-32@1x.png`
+- `appicon-mac-32@2x.png`
+- `appicon-mac-128@1x.png`
+- `appicon-mac-128@2x.png`
+- `appicon-mac-256@1x.png`
+- `appicon-mac-256@2x.png`
+- `appicon-mac-512@1x.png`
+- `appicon-mac-512@2x.png`
 - `Contents.json`
 
 把整个 `AppIcon.appiconset` 拖进 Xcode 的 `Assets.xcassets` 即可。

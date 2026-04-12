@@ -40,37 +40,37 @@ struct IconRenderer {
     let shadowStrength: Double
 
     private let specs: [IconSpec] = [
-        .init(filename: "iphone-notification-20@2x.png", idiom: "iphone", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "iphone-notification-20@3x.png", idiom: "iphone", pointSize: 20, pixelSize: 60, scale: "3x", role: nil, subtype: nil),
-        .init(filename: "iphone-settings-29@2x.png", idiom: "iphone", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "iphone-settings-29@3x.png", idiom: "iphone", pointSize: 29, pixelSize: 87, scale: "3x", role: nil, subtype: nil),
-        .init(filename: "iphone-spotlight-40@2x.png", idiom: "iphone", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "iphone-spotlight-40@3x.png", idiom: "iphone", pointSize: 40, pixelSize: 120, scale: "3x", role: nil, subtype: nil),
-        .init(filename: "iphone-app-60@2x.png", idiom: "iphone", pointSize: 60, pixelSize: 120, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "iphone-app-60@3x.png", idiom: "iphone", pointSize: 60, pixelSize: 180, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-20@2x.png", idiom: "iphone", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-20@3x.png", idiom: "iphone", pointSize: 20, pixelSize: 60, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-29@2x.png", idiom: "iphone", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-29@3x.png", idiom: "iphone", pointSize: 29, pixelSize: 87, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-40@2x.png", idiom: "iphone", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-40@3x.png", idiom: "iphone", pointSize: 40, pixelSize: 120, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-60@2x.png", idiom: "iphone", pointSize: 60, pixelSize: 120, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-iphone-60@3x.png", idiom: "iphone", pointSize: 60, pixelSize: 180, scale: "3x", role: nil, subtype: nil),
 
-        .init(filename: "ipad-notifications-20@1x.png", idiom: "ipad", pointSize: 20, pixelSize: 20, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "ipad-notifications-20@2x.png", idiom: "ipad", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "ipad-settings-29@1x.png", idiom: "ipad", pointSize: 29, pixelSize: 29, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "ipad-settings-29@2x.png", idiom: "ipad", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "ipad-spotlight-40@1x.png", idiom: "ipad", pointSize: 40, pixelSize: 40, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "ipad-spotlight-40@2x.png", idiom: "ipad", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "ipad-app-76@1x.png", idiom: "ipad", pointSize: 76, pixelSize: 76, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "ipad-app-76@2x.png", idiom: "ipad", pointSize: 76, pixelSize: 152, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "ipad-pro-app-83.5@2x.png", idiom: "ipad", pointSize: 83.5, pixelSize: 167, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-20@1x.png", idiom: "ipad", pointSize: 20, pixelSize: 20, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-20@2x.png", idiom: "ipad", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-29@1x.png", idiom: "ipad", pointSize: 29, pixelSize: 29, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-29@2x.png", idiom: "ipad", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-40@1x.png", idiom: "ipad", pointSize: 40, pixelSize: 40, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-40@2x.png", idiom: "ipad", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-76@1x.png", idiom: "ipad", pointSize: 76, pixelSize: 76, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-76@2x.png", idiom: "ipad", pointSize: 76, pixelSize: 152, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-ipad-83.5@2x.png", idiom: "ipad", pointSize: 83.5, pixelSize: 167, scale: "2x", role: nil, subtype: nil),
 
-        .init(filename: "ios-marketing-1024@1x.png", idiom: "ios-marketing", pointSize: 1024, pixelSize: 1024, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-appstore-1024.png", idiom: "ios-marketing", pointSize: 1024, pixelSize: 1024, scale: "1x", role: nil, subtype: nil),
 
-        .init(filename: "mac-16@1x.png", idiom: "mac", pointSize: 16, pixelSize: 16, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "mac-16@2x.png", idiom: "mac", pointSize: 16, pixelSize: 32, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "mac-32@1x.png", idiom: "mac", pointSize: 32, pixelSize: 32, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "mac-32@2x.png", idiom: "mac", pointSize: 32, pixelSize: 64, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "mac-128@1x.png", idiom: "mac", pointSize: 128, pixelSize: 128, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "mac-128@2x.png", idiom: "mac", pointSize: 128, pixelSize: 256, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "mac-256@1x.png", idiom: "mac", pointSize: 256, pixelSize: 256, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "mac-256@2x.png", idiom: "mac", pointSize: 256, pixelSize: 512, scale: "2x", role: nil, subtype: nil),
-        .init(filename: "mac-512@1x.png", idiom: "mac", pointSize: 512, pixelSize: 512, scale: "1x", role: nil, subtype: nil),
-        .init(filename: "mac-512@2x.png", idiom: "mac", pointSize: 512, pixelSize: 1024, scale: "2x", role: nil, subtype: nil)
+        .init(filename: "appicon-mac-16@1x.png", idiom: "mac", pointSize: 16, pixelSize: 16, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-16@2x.png", idiom: "mac", pointSize: 16, pixelSize: 32, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-32@1x.png", idiom: "mac", pointSize: 32, pixelSize: 32, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-32@2x.png", idiom: "mac", pointSize: 32, pixelSize: 64, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-128@1x.png", idiom: "mac", pointSize: 128, pixelSize: 128, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-128@2x.png", idiom: "mac", pointSize: 128, pixelSize: 256, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-256@1x.png", idiom: "mac", pointSize: 256, pixelSize: 256, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-256@2x.png", idiom: "mac", pointSize: 256, pixelSize: 512, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-512@1x.png", idiom: "mac", pointSize: 512, pixelSize: 512, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "appicon-mac-512@2x.png", idiom: "mac", pointSize: 512, pixelSize: 1024, scale: "2x", role: nil, subtype: nil)
     ]
 
     func render(size: CGFloat) throws -> NSImage {
@@ -115,9 +115,9 @@ struct IconRenderer {
         return image
     }
 
-    func exportAppIconSet(to folderURL: URL) throws -> URL {
+    func exportAppIconSet(named iconSetName: String, to folderURL: URL) throws -> URL {
         let fileManager = FileManager.default
-        let appIconSetURL = folderURL.appendingPathComponent("AppIcon.appiconset", isDirectory: true)
+        let appIconSetURL = folderURL.appendingPathComponent(iconSetName, isDirectory: true)
 
         if fileManager.fileExists(atPath: appIconSetURL.path) {
             try fileManager.removeItem(at: appIconSetURL)

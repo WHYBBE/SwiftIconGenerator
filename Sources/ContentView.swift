@@ -47,6 +47,7 @@ struct ContentView: View {
     @State private var contentPaddingRatio = 0.10
     @State private var symbolScaleRatio = 0.44
     @State private var shadowStrength = 0.25
+    @State private var iconSetName = "AppIcon"
     @State private var exportMessage = ""
     @State private var exportSucceeded = false
     @State private var didActivateWindow = false
@@ -198,6 +199,9 @@ struct ContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
+                    TextField("Icon set name", text: $iconSetName)
+                        .textFieldStyle(.roundedBorder)
+
                     Button("Export Xcode AppIcon.appiconset", action: exportIconSet)
                         .buttonStyle(.borderedProminent)
 
@@ -207,7 +211,7 @@ struct ContentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    Text("Exports an Xcode-ready AppIcon.appiconset for iPhone, iPad, App Store, and macOS.")
+                    Text("Exports an Xcode-ready .appiconset for iPhone, iPad, App Store, and macOS.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -310,20 +314,26 @@ struct ContentView: View {
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Export"
-        panel.message = "Choose a folder to export an Xcode-ready AppIcon.appiconset"
+        panel.message = "Choose a folder to export the icon set"
 
         guard panel.runModal() == .OK, let folderURL = panel.url else {
             return
         }
 
         do {
-            let exportURL = try makeRenderer().exportAppIconSet(to: folderURL)
+            let exportURL = try makeRenderer().exportAppIconSet(named: normalizedIconSetName, to: folderURL)
             exportSucceeded = true
             exportMessage = "Exported to \(exportURL.path)"
         } catch {
             exportSucceeded = false
             exportMessage = error.localizedDescription
         }
+    }
+
+    private var normalizedIconSetName: String {
+        let trimmed = iconSetName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseName = trimmed.isEmpty ? "AppIcon" : trimmed
+        return baseName.hasSuffix(".appiconset") ? baseName : "\(baseName).appiconset"
     }
 }
 
