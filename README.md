@@ -6,7 +6,7 @@
 
 - 输入任意 `SF Symbol` 名称
 - 内置可搜索的 `SF Symbols` 选择器，支持直接点击选择
-- 调整前景色、背景色、渐变、圆角、图标缩放、阴影
+- 调整前景色、背景色、渐变、圆角、内容留白、图标缩放、阴影
 - 实时预览导出效果
 - 一键导出适用于 Xcode 的 `AppIcon.appiconset`，覆盖 iPhone、iPad、App Store 和 macOS
 

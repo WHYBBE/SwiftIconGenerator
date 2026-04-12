@@ -35,6 +35,7 @@ struct IconRenderer {
     let secondaryBackgroundColor: NSColor
     let useGradient: Bool
     let cornerRadiusRatio: Double
+    let contentPaddingRatio: Double
     let symbolScaleRatio: Double
     let shadowStrength: Double
 
@@ -80,9 +81,10 @@ struct IconRenderer {
         let image = NSImage(size: NSSize(width: size, height: size))
         image.lockFocus()
 
-        let rect = NSRect(x: 0, y: 0, width: size, height: size)
-        let cornerRadius = size * cornerRadiusRatio
-        let bezierPath = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
+        let padding = size * contentPaddingRatio
+        let iconRect = NSRect(x: padding, y: padding, width: size - (padding * 2), height: size - (padding * 2))
+        let cornerRadius = iconRect.width * cornerRadiusRatio
+        let bezierPath = NSBezierPath(roundedRect: iconRect, xRadius: cornerRadius, yRadius: cornerRadius)
 
         NSGraphicsContext.current?.imageInterpolation = .high
 
@@ -106,7 +108,7 @@ struct IconRenderer {
         let configuredSymbol = symbolImage.withSymbolConfiguration(symbolConfig) ?? symbolImage
         let tintedSymbol = configuredSymbol.withSymbolConfiguration(.init(paletteColors: [foregroundColor])) ?? configuredSymbol
 
-        let symbolRect = centeredRect(for: tintedSymbol.size, canvasSize: size, scale: 1)
+        let symbolRect = centeredRect(for: tintedSymbol.size, canvasRect: iconRect)
         tintedSymbol.draw(in: symbolRect)
 
         image.unlockFocus()
@@ -174,12 +176,12 @@ struct IconRenderer {
         try pngData.write(to: fileURL)
     }
 
-    private func centeredRect(for symbolSize: NSSize, canvasSize: CGFloat, scale: CGFloat) -> NSRect {
-        let width = canvasSize * symbolScaleRatio * scale
+    private func centeredRect(for symbolSize: NSSize, canvasRect: NSRect) -> NSRect {
+        let width = canvasRect.width * symbolScaleRatio
         let aspectRatio = symbolSize.height == 0 ? 1 : symbolSize.width / symbolSize.height
         let height = width / max(aspectRatio, 0.01)
-        let originX = (canvasSize - width) / 2
-        let originY = (canvasSize - height) / 2
+        let originX = canvasRect.midX - (width / 2)
+        let originY = canvasRect.midY - (height / 2)
         return NSRect(x: originX, y: originY, width: width, height: height)
     }
 

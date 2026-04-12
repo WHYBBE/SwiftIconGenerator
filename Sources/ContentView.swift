@@ -6,6 +6,36 @@ struct ContentView: View {
         case symbolName
     }
 
+    private enum VisualSizePreset: String, CaseIterable, Identifiable {
+        case compact = "Compact"
+        case balanced = "Balanced"
+        case bold = "Bold"
+
+        var id: String { rawValue }
+
+        var contentPaddingRatio: Double {
+            switch self {
+            case .compact:
+                return 0.14
+            case .balanced:
+                return 0.10
+            case .bold:
+                return 0.06
+            }
+        }
+
+        var symbolScaleRatio: Double {
+            switch self {
+            case .compact:
+                return 0.38
+            case .balanced:
+                return 0.44
+            case .bold:
+                return 0.50
+            }
+        }
+    }
+
     @State private var symbolName = "sparkles"
     @State private var symbolQuery = ""
     @State private var foregroundColor = Color.white
@@ -13,7 +43,9 @@ struct ContentView: View {
     @State private var useGradient = true
     @State private var secondaryBackgroundColor = Color(red: 0.39, green: 0.20, blue: 0.98)
     @State private var cornerRadiusRatio = 0.24
-    @State private var symbolScaleRatio = 0.54
+    @State private var visualSizePreset: VisualSizePreset = .balanced
+    @State private var contentPaddingRatio = 0.10
+    @State private var symbolScaleRatio = 0.44
     @State private var shadowStrength = 0.25
     @State private var exportMessage = ""
     @State private var exportSucceeded = false
@@ -55,6 +87,7 @@ struct ContentView: View {
         })
         .onAppear {
             DispatchQueue.main.async {
+                applyVisualSizePreset(visualSizePreset)
                 focusedField = .symbolName
             }
         }
@@ -100,6 +133,21 @@ struct ContentView: View {
 
                 GroupBox("Appearance") {
                     VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Visual size")
+
+                            Picker("Visual size", selection: $visualSizePreset) {
+                                ForEach(VisualSizePreset.allCases) { preset in
+                                    Text(preset.rawValue).tag(preset)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+                            .onChange(of: visualSizePreset) { _, newPreset in
+                                applyVisualSizePreset(newPreset)
+                            }
+                        }
+
                         ColorSettingRow(title: "Foreground", color: $foregroundColor)
                         ColorSettingRow(title: "Background", color: $backgroundColor)
 
@@ -117,9 +165,16 @@ struct ContentView: View {
                         )
 
                         SliderSettingRow(
+                            title: "Content padding",
+                            value: $contentPaddingRatio,
+                            range: 0.04...0.2,
+                            valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0)))
+                        )
+
+                        SliderSettingRow(
                             title: "Symbol scale",
                             value: $symbolScaleRatio,
-                            range: 0.38...0.72,
+                            range: 0.28...0.62,
                             valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0)))
                         )
 
@@ -219,6 +274,7 @@ struct ContentView: View {
             secondaryBackgroundColor: NSColor(secondaryBackgroundColor),
             useGradient: useGradient,
             cornerRadiusRatio: cornerRadiusRatio,
+            contentPaddingRatio: contentPaddingRatio,
             symbolScaleRatio: symbolScaleRatio,
             shadowStrength: shadowStrength
         )
@@ -226,6 +282,11 @@ struct ContentView: View {
 
     private func makePreviewImage(size: CGFloat) -> NSImage? {
         try? makeRenderer().render(size: size)
+    }
+
+    private func applyVisualSizePreset(_ preset: VisualSizePreset) {
+        contentPaddingRatio = preset.contentPaddingRatio
+        symbolScaleRatio = preset.symbolScaleRatio
     }
 
     private func exportIconSet() {
