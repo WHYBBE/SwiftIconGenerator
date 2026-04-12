@@ -4,6 +4,10 @@
 
 [English README](./README.md)
 
+## 预览
+
+![SwiftIconGenerator 预览](./docs/app_preview.png)
+
 SwiftIconGenerator 是一个基于 macOS SwiftUI 的图标生成工具，可以将 `SF Symbols` 或 `Emoji` 生成为可直接用于 Xcode 的 `AppIcon.appiconset`。
 
 它适合快速生成风格统一、可直接拖入 `Assets.xcassets` 的应用图标资源。

@@ -4,6 +4,10 @@ Built with GPT-5.4 (OpenCode) via vibe coding.
 
 [中文说明 / Chinese README](./README.zh-CN.md)
 
+## Preview
+
+![SwiftIconGenerator Preview](./docs/app_preview.png)
+
 SwiftIconGenerator is a macOS SwiftUI app for generating Xcode-ready app icon sets from either `SF Symbols` or `Emoji`.
 
 It is designed for quickly creating polished `AppIcon.appiconset` assets that can be dropped directly into `Assets.xcassets`.
