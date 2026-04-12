@@ -1,49 +1,40 @@
 # SwiftIconGenerator
 
-一个基于 SwiftUI 的 macOS 小工具，用来把 `SF Symbols` 或 `Emoji` 生成为可直接用于 Swift/Xcode 项目的 `AppIcon.appiconset`。
+[中文说明 / Chinese README](./README.zh-CN.md)
 
-项目现在同时包含：
+SwiftIconGenerator is a macOS SwiftUI app for generating Xcode-ready app icon sets from either `SF Symbols` or `Emoji`.
 
-- 标准 macOS Xcode 工程：`SwiftIconGenerator.xcodeproj`
-- 原始 Swift Package 结构，便于命令行构建和迭代
+It is designed for quickly creating polished `AppIcon.appiconset` assets that can be dropped directly into `Assets.xcassets`.
 
-## 功能
+## Features
 
-- 输入任意 `SF Symbol` 名称
-- 支持 `Emoji Icon` 输入和常用 emoji 直接选择
-- 内置可搜索的 `SF Symbols` 选择器，支持直接点击选择
-- 调整前景色、背景色、渐变、圆角、内容留白、图标缩放、阴影
-- 实时预览导出效果
-- 一键导出适用于 Xcode 的 `AppIcon.appiconset`，覆盖 iPhone、iPad、App Store 和 macOS
-- 导出时可按渠道筛选 iPhone、iPad、App Store、macOS
+- Generate icons from `SF Symbols`
+- Generate icons from `Emoji`
+- Search and pick from a built-in SF Symbols list
+- Pick from a built-in emoji list
+- Open the macOS system emoji picker
+- Live preview at multiple icon sizes
+- Tune appearance with:
+  - foreground color
+  - background color
+  - gradient
+  - corner radius
+  - content padding
+  - symbol scale
+  - shadow
+- Visual size presets: `Compact`, `Balanced`, `Bold`
+- Export a named `.appiconset`
+- Filter export targets by platform:
+  - iPhone
+  - iPad
+  - App Store
+  - macOS
 
-## 运行
+## Export Output
 
-推荐方式：
+The app exports a complete Xcode-compatible `AppIcon.appiconset` including `Contents.json`.
 
-```text
-打开 SwiftIconGenerator.xcodeproj
-```
-
-然后直接在 Xcode 中运行，工程已绑定标准 `AppIcon` 应用图标。
-
-也可以继续使用命令行：
-
-```bash
-swift run
-```
-
-命令行方式主要用于快速构建；标准 app 图标和资源绑定以 Xcode 工程为准。
-
-## 导出结果
-
-导出后会生成：
-
-```text
-AppIcon.appiconset/
-```
-
-其中包含 Xcode 常用的 app icon 尺寸，例如：
+Example output files:
 
 - `appicon-iphone-60@2x.png`
 - `appicon-iphone-60@3x.png`
@@ -63,4 +54,41 @@ AppIcon.appiconset/
 - `appicon-mac-512@2x.png`
 - `Contents.json`
 
-把整个 `AppIcon.appiconset` 拖进 Xcode 的 `Assets.xcassets` 即可。
+Drop the generated `.appiconset` folder into your Xcode project's `Assets.xcassets`.
+
+## Run
+
+Recommended:
+
+1. Open `SwiftIconGenerator.xcodeproj`
+2. Run the `SwiftIconGenerator` scheme in Xcode
+
+The project is configured as a standard macOS app project and includes a proper app icon.
+
+You can also run it from the command line:
+
+```bash
+swift run
+```
+
+## Usage
+
+1. Choose `SF Symbols` or `Emoji`
+2. Select or enter your icon content
+3. Adjust appearance settings
+4. Choose the icon set name
+5. Select export platforms
+6. Export the `.appiconset`
+
+## Project Layout
+
+- `SwiftIconGenerator.xcodeproj`: standard macOS Xcode project
+- `SwiftIconGenerator/`: app resources such as `Info.plist` and `Assets.xcassets`
+- `Sources/`: SwiftUI app source code and icon rendering logic
+- `Package.swift`: Swift Package definition for command-line builds
+
+## Notes
+
+- The Xcode project is the primary way to run the app.
+- The Swift Package remains available for quick builds and local iteration.
+- Emoji rendering uses text drawing, while SF Symbols rendering uses AppKit symbol images.
