@@ -4,9 +4,12 @@ import Foundation
 struct IconRenderer {
     struct IconSpec {
         let filename: String
-        let pointSize: Int
+        let idiom: String
+        let pointSize: Double
         let pixelSize: Int
         let scale: String
+        let role: String?
+        let subtype: String?
     }
 
     enum IconRendererError: LocalizedError {
@@ -36,16 +39,37 @@ struct IconRenderer {
     let shadowStrength: Double
 
     private let specs: [IconSpec] = [
-        .init(filename: "icon_16x16.png", pointSize: 16, pixelSize: 16, scale: "1x"),
-        .init(filename: "icon_16x16@2x.png", pointSize: 16, pixelSize: 32, scale: "2x"),
-        .init(filename: "icon_32x32.png", pointSize: 32, pixelSize: 32, scale: "1x"),
-        .init(filename: "icon_32x32@2x.png", pointSize: 32, pixelSize: 64, scale: "2x"),
-        .init(filename: "icon_128x128.png", pointSize: 128, pixelSize: 128, scale: "1x"),
-        .init(filename: "icon_128x128@2x.png", pointSize: 128, pixelSize: 256, scale: "2x"),
-        .init(filename: "icon_256x256.png", pointSize: 256, pixelSize: 256, scale: "1x"),
-        .init(filename: "icon_256x256@2x.png", pointSize: 256, pixelSize: 512, scale: "2x"),
-        .init(filename: "icon_512x512.png", pointSize: 512, pixelSize: 512, scale: "1x"),
-        .init(filename: "icon_512x512@2x.png", pointSize: 512, pixelSize: 1024, scale: "2x")
+        .init(filename: "iphone-notification-20@2x.png", idiom: "iphone", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "iphone-notification-20@3x.png", idiom: "iphone", pointSize: 20, pixelSize: 60, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "iphone-settings-29@2x.png", idiom: "iphone", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "iphone-settings-29@3x.png", idiom: "iphone", pointSize: 29, pixelSize: 87, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "iphone-spotlight-40@2x.png", idiom: "iphone", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "iphone-spotlight-40@3x.png", idiom: "iphone", pointSize: 40, pixelSize: 120, scale: "3x", role: nil, subtype: nil),
+        .init(filename: "iphone-app-60@2x.png", idiom: "iphone", pointSize: 60, pixelSize: 120, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "iphone-app-60@3x.png", idiom: "iphone", pointSize: 60, pixelSize: 180, scale: "3x", role: nil, subtype: nil),
+
+        .init(filename: "ipad-notifications-20@1x.png", idiom: "ipad", pointSize: 20, pixelSize: 20, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "ipad-notifications-20@2x.png", idiom: "ipad", pointSize: 20, pixelSize: 40, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "ipad-settings-29@1x.png", idiom: "ipad", pointSize: 29, pixelSize: 29, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "ipad-settings-29@2x.png", idiom: "ipad", pointSize: 29, pixelSize: 58, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "ipad-spotlight-40@1x.png", idiom: "ipad", pointSize: 40, pixelSize: 40, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "ipad-spotlight-40@2x.png", idiom: "ipad", pointSize: 40, pixelSize: 80, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "ipad-app-76@1x.png", idiom: "ipad", pointSize: 76, pixelSize: 76, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "ipad-app-76@2x.png", idiom: "ipad", pointSize: 76, pixelSize: 152, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "ipad-pro-app-83.5@2x.png", idiom: "ipad", pointSize: 83.5, pixelSize: 167, scale: "2x", role: nil, subtype: nil),
+
+        .init(filename: "ios-marketing-1024@1x.png", idiom: "ios-marketing", pointSize: 1024, pixelSize: 1024, scale: "1x", role: nil, subtype: nil),
+
+        .init(filename: "mac-16@1x.png", idiom: "mac", pointSize: 16, pixelSize: 16, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "mac-16@2x.png", idiom: "mac", pointSize: 16, pixelSize: 32, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "mac-32@1x.png", idiom: "mac", pointSize: 32, pixelSize: 32, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "mac-32@2x.png", idiom: "mac", pointSize: 32, pixelSize: 64, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "mac-128@1x.png", idiom: "mac", pointSize: 128, pixelSize: 128, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "mac-128@2x.png", idiom: "mac", pointSize: 128, pixelSize: 256, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "mac-256@1x.png", idiom: "mac", pointSize: 256, pixelSize: 256, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "mac-256@2x.png", idiom: "mac", pointSize: 256, pixelSize: 512, scale: "2x", role: nil, subtype: nil),
+        .init(filename: "mac-512@1x.png", idiom: "mac", pointSize: 512, pixelSize: 512, scale: "1x", role: nil, subtype: nil),
+        .init(filename: "mac-512@2x.png", idiom: "mac", pointSize: 512, pixelSize: 1024, scale: "2x", role: nil, subtype: nil)
     ]
 
     func render(size: CGFloat) throws -> NSImage {
@@ -113,14 +137,35 @@ struct IconRenderer {
     }
 
     private func writePNG(image: NSImage, to fileURL: URL, pixelSize: Int) throws {
-        guard
-            let tiffData = image.tiffRepresentation,
-            let bitmap = NSBitmapImageRep(data: tiffData)
-        else {
+        guard let bitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: pixelSize,
+            pixelsHigh: pixelSize,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else {
             throw IconRendererError.failedBitmapCreation(pixelSize)
         }
 
         bitmap.size = NSSize(width: pixelSize, height: pixelSize)
+
+        NSGraphicsContext.saveGraphicsState()
+        let context = NSGraphicsContext(bitmapImageRep: bitmap)
+        NSGraphicsContext.current = context
+        context?.imageInterpolation = .high
+        image.draw(
+            in: NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize),
+            from: .zero,
+            operation: .copy,
+            fraction: 1
+        )
+        context?.flushGraphics()
+        NSGraphicsContext.restoreGraphicsState()
 
         guard let pngData = bitmap.representation(using: .png, properties: [:]) else {
             throw IconRendererError.failedPNGEncoding(fileURL.lastPathComponent)
@@ -140,13 +185,26 @@ struct IconRenderer {
 
     private func makeContentsJSON() -> String {
         let images = specs.map { spec in
-            """
-                {
-                  \"filename\" : \"\(spec.filename)\",
-                  \"idiom\" : \"mac\",
-                  \"scale\" : \"\(spec.scale)\",
-                  \"size\" : \"\(spec.pointSize)x\(spec.pointSize)\"
-                }
+            var fields = [
+                "\"filename\" : \"\(spec.filename)\"",
+                "\"idiom\" : \"\(spec.idiom)\"",
+                "\"scale\" : \"\(spec.scale)\"",
+                "\"size\" : \"\(formattedPointSize(spec.pointSize))x\(formattedPointSize(spec.pointSize))\""
+            ]
+
+            if let role = spec.role {
+                fields.append("\"role\" : \"\(role)\"")
+            }
+
+            if let subtype = spec.subtype {
+                fields.append("\"subtype\" : \"\(subtype)\"")
+            }
+
+            let body = fields.map { "        \($0)" }.joined(separator: ",\n")
+            return """
+                  {
+            \(body)
+                  }
             """
         }.joined(separator: ",\n")
 
@@ -161,5 +219,13 @@ struct IconRenderer {
           }
         }
         """
+    }
+
+    private func formattedPointSize(_ size: Double) -> String {
+        if size.rounded() == size {
+            return String(Int(size))
+        }
+
+        return String(size)
     }
 }

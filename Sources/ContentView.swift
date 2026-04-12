@@ -134,7 +134,7 @@ struct ContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Button("Export AppIcon.appiconset", action: exportIconSet)
+                    Button("Export Xcode AppIcon.appiconset", action: exportIconSet)
                         .buttonStyle(.borderedProminent)
 
                     if !exportMessage.isEmpty {
@@ -143,7 +143,7 @@ struct ContentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    Text("Exports all macOS app icon sizes plus a ready-to-use Contents.json.")
+                    Text("Exports an Xcode-ready AppIcon.appiconset for iPhone, iPad, App Store, and macOS.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -235,7 +235,7 @@ struct ContentView: View {
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Export"
-        panel.message = "Choose a folder to export AppIcon.appiconset"
+        panel.message = "Choose a folder to export an Xcode-ready AppIcon.appiconset"
 
         guard panel.runModal() == .OK, let folderURL = panel.url else {
             return
