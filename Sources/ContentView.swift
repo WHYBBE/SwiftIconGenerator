@@ -77,6 +77,8 @@ struct ContentView: View {
     @State private var iconMode: IconMode = .sfSymbol
     @State private var emoji = "🚀"
     @State private var foregroundColor = Color.white
+    @State private var useForegroundGradient = false
+    @State private var secondaryForegroundColor = Color(red: 1.0, green: 0.86, blue: 0.25)
     @State private var backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
     @State private var useGradient = true
     @State private var secondaryBackgroundColor = Color(red: 0.39, green: 0.20, blue: 0.98)
@@ -284,6 +286,13 @@ struct ContentView: View {
                         }
 
                         ColorSettingRow(title: t(en: "Foreground", zh: "前景色"), color: $foregroundColor)
+
+                        Toggle(t(en: "Foreground gradient", zh: "前景渐变"), isOn: $useForegroundGradient)
+
+                        if useForegroundGradient {
+                            ColorSettingRow(title: t(en: "Foreground end", zh: "前景结束色"), color: $secondaryForegroundColor)
+                        }
+
                         ColorSettingRow(title: t(en: "Background", zh: "背景色"), color: $backgroundColor)
 
                         Toggle(t(en: "Use gradient", zh: "使用渐变"), isOn: $useGradient)
@@ -445,6 +454,8 @@ struct ContentView: View {
         IconRenderer(
             content: iconContent,
             foregroundColor: NSColor(foregroundColor),
+            secondaryForegroundColor: NSColor(secondaryForegroundColor),
+            useForegroundGradient: useForegroundGradient,
             backgroundColor: NSColor(backgroundColor),
             secondaryBackgroundColor: NSColor(secondaryBackgroundColor),
             useGradient: useGradient,

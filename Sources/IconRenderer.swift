@@ -60,6 +60,8 @@ struct IconRenderer {
 
     let content: IconContent
     let foregroundColor: NSColor
+    let secondaryForegroundColor: NSColor
+    let useForegroundGradient: Bool
     let backgroundColor: NSColor
     let secondaryBackgroundColor: NSColor
     let useGradient: Bool
@@ -121,14 +123,6 @@ struct IconRenderer {
             bezierPath.fill()
         }
 
-        if shadowStrength > 0 {
-            let shadow = NSShadow()
-            shadow.shadowColor = NSColor.black.withAlphaComponent(shadowStrength * 0.7)
-            shadow.shadowOffset = NSSize(width: 0, height: -(size * 0.025))
-            shadow.shadowBlurRadius = size * 0.06
-            shadow.set()
-        }
-
         switch content {
         case .symbol(let symbolName):
             guard let symbolImage = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else {
@@ -139,7 +133,28 @@ struct IconRenderer {
             let configuredSymbol = symbolImage.withSymbolConfiguration(symbolConfig) ?? symbolImage
             let tintedSymbol = configuredSymbol.withSymbolConfiguration(.init(paletteColors: [foregroundColor])) ?? configuredSymbol
             let symbolRect = centeredRect(for: tintedSymbol.size, canvasRect: iconRect)
-            tintedSymbol.draw(in: symbolRect)
+
+            if shadowStrength > 0 {
+                let shadowSymbol = makeShadowSymbolImage(
+                    size: size,
+                    symbol: tintedSymbol,
+                    symbolRect: symbolRect
+                )
+                shadowSymbol.draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+            }
+
+            let foregroundSymbol = makeGradientSymbolImage(
+                size: size,
+                symbol: tintedSymbol,
+                symbolRect: symbolRect
+            )
+
+            NSGraphicsContext.saveGraphicsState()
+            let noShadow = NSShadow()
+            noShadow.shadowColor = .clear
+            noShadow.set()
+            foregroundSymbol.draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+            NSGraphicsContext.restoreGraphicsState()
 
         case .emoji(let emoji):
             let trimmedEmoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -169,6 +184,7 @@ struct IconRenderer {
                 height: textBounds.height
             )
 
+            setContentShadow(size: size)
             attributedEmoji.draw(in: drawRect)
         }
 
@@ -245,6 +261,143 @@ struct IconRenderer {
         let originX = canvasRect.midX - (width / 2)
         let originY = canvasRect.midY - (height / 2)
         return NSRect(x: originX, y: originY, width: width, height: height)
+    }
+
+    private func setContentShadow(size: CGFloat) {
+        guard shadowStrength > 0 else { return }
+
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(shadowStrength * 0.7)
+        shadow.shadowOffset = NSSize(width: 0, height: -(size * 0.025))
+        shadow.shadowBlurRadius = size * 0.06
+        shadow.set()
+    }
+
+    private func makeShadowSymbolImage(size: CGFloat, symbol: NSImage, symbolRect: NSRect) -> NSImage {
+        let canvasRect = NSRect(x: 0, y: 0, width: size, height: size)
+        let image = NSImage(size: NSSize(width: size, height: size))
+        image.lockFocus()
+
+        NSColor.clear.setFill()
+        canvasRect.fill()
+
+        setContentShadow(size: size)
+        let maskSymbol = symbol.withSymbolConfiguration(.init(paletteColors: [.black])) ?? symbol
+        maskSymbol.draw(in: symbolRect, from: .zero, operation: .sourceOver, fraction: 1)
+
+        let noShadow = NSShadow()
+        noShadow.shadowColor = .clear
+        noShadow.set()
+        maskSymbol.draw(in: symbolRect, from: .zero, operation: .destinationOut, fraction: 1)
+
+        image.unlockFocus()
+        return image
+    }
+
+    private func makeGradientSymbolImage(size: CGFloat, symbol: NSImage, symbolRect: NSRect) -> NSImage {
+        let renderScale: CGFloat = size < 512 ? 2 : 1
+        let pixelWidth = max(1, Int((size * renderScale).rounded(.up)))
+        let pixelHeight = pixelWidth
+        let bytesPerPixel = 4
+        let bytesPerRow = pixelWidth * bytesPerPixel
+        let byteCount = pixelHeight * bytesPerRow
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+        let startColor = foregroundColor.usingColorSpace(.deviceRGB) ?? foregroundColor
+        let endSourceColor = useForegroundGradient ? secondaryForegroundColor : foregroundColor
+        let endColor = endSourceColor.usingColorSpace(.deviceRGB) ?? endSourceColor
+        let imageSize = NSSize(width: size, height: size)
+        let scaledSymbolRect = NSRect(
+            x: symbolRect.minX * renderScale,
+            y: symbolRect.minY * renderScale,
+            width: symbolRect.width * renderScale,
+            height: symbolRect.height * renderScale
+        )
+        var maskPixels = [UInt8](repeating: 0, count: byteCount)
+        var imagePixels = [UInt8](repeating: 0, count: byteCount)
+
+        let maskCreated = maskPixels.withUnsafeMutableBytes { maskBytes in
+            guard let maskBaseAddress = maskBytes.baseAddress,
+                  let maskContext = CGContext(
+                    data: maskBaseAddress,
+                    width: pixelWidth,
+                    height: pixelHeight,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo
+                  ) else {
+                return false
+            }
+
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(cgContext: maskContext, flipped: false)
+            symbol.draw(in: scaledSymbolRect, from: .zero, operation: .sourceOver, fraction: 1)
+            maskContext.flush()
+            NSGraphicsContext.restoreGraphicsState()
+            return true
+        }
+
+        guard maskCreated else {
+            return NSImage(size: imageSize)
+        }
+
+        for y in 0..<pixelHeight {
+            for x in 0..<pixelWidth {
+                let offset = (y * bytesPerRow) + (x * bytesPerPixel)
+                let alpha = CGFloat(maskPixels[offset + 3]) / 255
+
+                guard alpha > 0 else {
+                    imagePixels[offset] = 0
+                    imagePixels[offset + 1] = 0
+                    imagePixels[offset + 2] = 0
+                    imagePixels[offset + 3] = 0
+                    continue
+                }
+
+                let point = NSPoint(x: CGFloat(x), y: CGFloat(y))
+                let progress = gradientProgress(at: point, in: scaledSymbolRect)
+                let color = interpolatedColor(from: startColor, to: endColor, progress: progress)
+                let red = color.redComponent * alpha
+                let green = color.greenComponent * alpha
+                let blue = color.blueComponent * alpha
+
+                imagePixels[offset] = UInt8((red * 255).rounded())
+                imagePixels[offset + 1] = UInt8((green * 255).rounded())
+                imagePixels[offset + 2] = UInt8((blue * 255).rounded())
+                imagePixels[offset + 3] = UInt8((alpha * 255).rounded())
+            }
+        }
+
+        return imagePixels.withUnsafeMutableBytes { imageBytes in
+            guard let imageBaseAddress = imageBytes.baseAddress,
+                  let imageContext = CGContext(
+                    data: imageBaseAddress,
+                    width: pixelWidth,
+                    height: pixelHeight,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo
+                  ),
+                  let cgImage = imageContext.makeImage() else {
+                return NSImage(size: imageSize)
+            }
+
+            return NSImage(cgImage: cgImage, size: imageSize)
+        }
+    }
+
+    private func gradientProgress(at point: NSPoint, in rect: NSRect) -> CGFloat {
+        let progress = ((point.x - rect.minX) + (point.y - rect.minY)) / max(rect.width + rect.height, 1)
+        return min(max(progress, 0), 1)
+    }
+
+    private func interpolatedColor(from start: NSColor, to end: NSColor, progress: CGFloat) -> NSColor {
+        let red = start.redComponent + ((end.redComponent - start.redComponent) * progress)
+        let green = start.greenComponent + ((end.greenComponent - start.greenComponent) * progress)
+        let blue = start.blueComponent + ((end.blueComponent - start.blueComponent) * progress)
+        return NSColor(deviceRed: red, green: green, blue: blue, alpha: 1)
     }
 
     private func centeredSquareRect(in canvasRect: NSRect, ratio: Double) -> NSRect {
