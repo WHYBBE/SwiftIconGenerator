@@ -11,6 +11,10 @@ struct SFIconGeneratorApp: App {
                 .frame(minWidth: 860, minHeight: 640)
         }
         .windowResizability(.contentMinSize)
+
+        Settings {
+            AppSettingsView()
+        }
     }
 }
 

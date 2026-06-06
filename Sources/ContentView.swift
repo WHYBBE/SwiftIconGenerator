@@ -12,6 +12,15 @@ struct ContentView: View {
         case emoji = "Emoji"
 
         var id: String { rawValue }
+
+        func title(language: AppLanguage) -> String {
+            switch self {
+            case .sfSymbol:
+                return "SF Symbols"
+            case .emoji:
+                return language.text(en: "Emoji", zh: "表情符号")
+            }
+        }
     }
 
     private enum VisualSizePreset: String, CaseIterable, Identifiable {
@@ -20,6 +29,17 @@ struct ContentView: View {
         case bold = "Bold"
 
         var id: String { rawValue }
+
+        func title(language: AppLanguage) -> String {
+            switch self {
+            case .compact:
+                return language.text(en: "Compact", zh: "紧凑")
+            case .balanced:
+                return language.text(en: "Balanced", zh: "均衡")
+            case .bold:
+                return language.text(en: "Bold", zh: "醒目")
+            }
+        }
 
         var contentPaddingRatio: Double {
             switch self {
@@ -63,6 +83,8 @@ struct ContentView: View {
     @State private var exportSucceeded = false
     @State private var didActivateWindow = false
     @State private var emojiPickerSelectionToken = 0
+    @AppStorage("appTheme") private var appTheme = AppTheme.system
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @FocusState private var focusedField: Field?
 
     private let suggestedEmojis = [
@@ -92,6 +114,7 @@ struct ContentView: View {
             previewPanel
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .preferredColorScheme(appTheme.colorScheme)
         .background(WindowAccessor { window in
             guard let window, !didActivateWindow else { return }
 
@@ -116,12 +139,12 @@ struct ContentView: View {
 
     private var symbolPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Icon Source")
+            Text(t(en: "Icon Source", zh: "图标来源"))
                 .font(.title2.weight(.semibold))
 
-            Picker("Icon source", selection: $iconMode) {
+            Picker(t(en: "Icon source", zh: "图标来源"), selection: $iconMode) {
                 ForEach(IconMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.title(language: appLanguage)).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
@@ -130,17 +153,17 @@ struct ContentView: View {
             }
 
             if iconMode == .sfSymbol {
-                Text("Symbol")
+                Text(t(en: "Symbol", zh: "符号"))
                     .font(.headline)
 
-                TextField("SF Symbol name", text: $symbolName)
+                TextField(t(en: "SF Symbol name", zh: "SF Symbol 名称"), text: $symbolName)
                     .textFieldStyle(.roundedBorder)
                     .focused($focusedField, equals: .symbolName)
 
-                TextField("Search symbols", text: $symbolQuery)
+                TextField(t(en: "Search symbols", zh: "搜索符号"), text: $symbolQuery)
                     .textFieldStyle(.roundedBorder)
 
-                Text("Choose a symbol directly from the list below.")
+                Text(t(en: "Choose a symbol directly from the list below.", zh: "直接从下方列表中选择一个符号。"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
@@ -160,18 +183,18 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(1)
             } else {
-                Text("Emoji")
+                Text(t(en: "Emoji", zh: "表情符号"))
                     .font(.headline)
 
-                TextField("Emoji", text: $emoji)
+                TextField(t(en: "Emoji", zh: "表情符号"), text: $emoji)
                     .textFieldStyle(.roundedBorder)
                     .focused($focusedField, equals: .emoji)
                     .background(SelectAllTextFieldContent(selectionToken: emojiPickerSelectionToken))
 
-                Button("Open System Emoji Picker", action: openEmojiPicker)
+                Button(t(en: "Open System Emoji Picker", zh: "打开系统表情符号选择器"), action: openEmojiPicker)
                     .buttonStyle(.bordered)
 
-                Text("Choose one emoji or paste a custom emoji sequence.")
+                Text(t(en: "Choose one emoji or paste a custom emoji sequence.", zh: "选择一个表情符号，或粘贴自定义表情序列。"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
@@ -199,17 +222,17 @@ struct ContentView: View {
     private var settingsPanel: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Configuration")
+                Text(t(en: "Configuration", zh: "配置"))
                     .font(.title2.weight(.semibold))
 
-                GroupBox("Appearance") {
+                GroupBox {
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Visual size")
+                            Text(t(en: "Visual size", zh: "视觉大小"))
 
-                            Picker("Visual size", selection: $visualSizePreset) {
+                            Picker(t(en: "Visual size", zh: "视觉大小"), selection: $visualSizePreset) {
                                 ForEach(VisualSizePreset.allCases) { preset in
-                                    Text(preset.rawValue).tag(preset)
+                                    Text(preset.title(language: appLanguage)).tag(preset)
                                 }
                             }
                             .pickerStyle(.segmented)
@@ -219,52 +242,54 @@ struct ContentView: View {
                             }
                         }
 
-                        ColorSettingRow(title: "Foreground", color: $foregroundColor)
-                        ColorSettingRow(title: "Background", color: $backgroundColor)
+                        ColorSettingRow(title: t(en: "Foreground", zh: "前景色"), color: $foregroundColor)
+                        ColorSettingRow(title: t(en: "Background", zh: "背景色"), color: $backgroundColor)
 
-                        Toggle("Use gradient", isOn: $useGradient)
+                        Toggle(t(en: "Use gradient", zh: "使用渐变"), isOn: $useGradient)
 
                         if useGradient {
-                            ColorSettingRow(title: "Gradient end", color: $secondaryBackgroundColor)
+                            ColorSettingRow(title: t(en: "Gradient end", zh: "渐变结束色"), color: $secondaryBackgroundColor)
                         }
 
                         SliderSettingRow(
-                            title: "Corner radius",
+                            title: t(en: "Corner radius", zh: "圆角"),
                             value: $cornerRadiusRatio,
                             range: 0.12...0.34,
                             valueText: cornerRadiusRatio.formatted(.percent.precision(.fractionLength(0)))
                         )
 
                         SliderSettingRow(
-                            title: "Content padding",
+                            title: t(en: "Content padding", zh: "内容边距"),
                             value: $contentPaddingRatio,
                             range: 0.04...0.2,
                             valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0)))
                         )
 
                         SliderSettingRow(
-                            title: "Symbol scale",
+                            title: t(en: "Symbol scale", zh: "符号缩放"),
                             value: $symbolScaleRatio,
                             range: 0.28...0.62,
                             valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0)))
                         )
 
                         SliderSettingRow(
-                            title: "Shadow",
+                            title: t(en: "Shadow", zh: "阴影"),
                             value: $shadowStrength,
                             range: 0...0.5,
                             valueText: shadowStrength.formatted(.percent.precision(.fractionLength(0)))
                         )
                     }
                     .padding(.top, 6)
+                } label: {
+                    Text(t(en: "Appearance", zh: "外观"))
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    TextField("Icon set name", text: $iconSetName)
+                    TextField(t(en: "Icon set name", zh: "图标集名称"), text: $iconSetName)
                         .textFieldStyle(.roundedBorder)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Export channels")
+                        Text(t(en: "Export channels", zh: "导出渠道"))
                             .font(.headline)
 
                         ForEach(IconRenderer.ExportPlatform.allCases, id: \.self) { platform in
@@ -272,7 +297,7 @@ struct ContentView: View {
                         }
                     }
 
-                    Button("Export Xcode AppIcon.appiconset", action: exportIconSet)
+                    Button(t(en: "Export Xcode AppIcon.appiconset", zh: "导出 Xcode AppIcon.appiconset"), action: exportIconSet)
                         .buttonStyle(.borderedProminent)
 
                     if !exportMessage.isEmpty {
@@ -281,7 +306,7 @@ struct ContentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    Text("Exports an Xcode-ready .appiconset for iPhone, iPad, App Store, and macOS.")
+                    Text(t(en: "Exports an Xcode-ready .appiconset for iPhone, iPad, App Store, and macOS.", zh: "导出适用于 iPhone、iPad、App Store 和 macOS 的 Xcode .appiconset。"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -294,7 +319,7 @@ struct ContentView: View {
 
     private var previewPanel: some View {
         VStack(spacing: 20) {
-            Text("Preview")
+            Text(t(en: "Preview", zh: "预览"))
                 .font(.title2.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -307,7 +332,7 @@ struct ContentView: View {
                 Text(previewTitle)
                     .font(.title3.weight(.semibold))
 
-                Text("Live preview of the generated macOS app icon style.")
+                Text(t(en: "Live preview of the generated macOS app icon style.", zh: "实时预览生成的 macOS 应用图标样式。"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -395,14 +420,18 @@ struct ContentView: View {
         symbolScaleRatio = preset.symbolScaleRatio
     }
 
+    private func t(en: String, zh: String) -> String {
+        appLanguage.text(en: en, zh: zh)
+    }
+
     private func exportIconSet() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Export"
-        panel.message = "Choose a folder to export the icon set"
+        panel.prompt = t(en: "Export", zh: "导出")
+        panel.message = t(en: "Choose a folder to export the icon set", zh: "选择要导出图标集的文件夹")
 
         guard panel.runModal() == .OK, let folderURL = panel.url else {
             return
@@ -415,7 +444,7 @@ struct ContentView: View {
                 to: folderURL
             )
             exportSucceeded = true
-            exportMessage = "Exported to \(exportURL.path)"
+            exportMessage = t(en: "Exported to", zh: "已导出到") + " \(exportURL.path)"
         } catch {
             exportSucceeded = false
             exportMessage = error.localizedDescription
