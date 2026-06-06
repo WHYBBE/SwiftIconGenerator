@@ -285,19 +285,28 @@ struct ContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
+                    Text(t(en: "Icon set name", zh: "图标集名称"))
+                        .font(.headline)
+
                     TextField(t(en: "Icon set name", zh: "图标集名称"), text: $iconSetName)
                         .textFieldStyle(.roundedBorder)
+
+                    Text(t(en: "Preview", zh: "预览") + ": " + normalizedIconSetName)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text(t(en: "Export channels", zh: "导出渠道"))
                             .font(.headline)
 
-                        ForEach(IconRenderer.ExportPlatform.allCases, id: \.self) { platform in
-                            Toggle(platform.title, isOn: binding(for: platform))
+                        HStack(spacing: 14) {
+                            ForEach(IconRenderer.ExportPlatform.allCases, id: \.self) { platform in
+                                Toggle(platform.title, isOn: binding(for: platform))
+                            }
                         }
                     }
 
-                    Button(t(en: "Export Xcode AppIcon.appiconset", zh: "导出 Xcode AppIcon.appiconset"), action: exportIconSet)
+                    Button(t(en: "Export", zh: "导出"), action: exportIconSet)
                         .buttonStyle(.borderedProminent)
 
                     if !exportMessage.isEmpty {
