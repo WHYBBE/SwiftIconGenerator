@@ -151,77 +151,113 @@ struct ContentView: View {
     }
 
     private var symbolPanel: some View {
+        sourcePanelContent
+            .padding(24)
+            .frame(width: 330)
+            .frame(maxHeight: .infinity)
+            .background(sourcePanelBackground)
+    }
+
+    private var sourcePanelBackground: some View {
+        Color(nsColor: .textBackgroundColor).opacity(0.35)
+    }
+
+    private var sourcePanelContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sourcePanelHeader
+            sourceControls
+        }
+    }
+
+    private var sourcePanelHeader: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(t(en: "Icon Source", zh: "图标来源"))
                 .font(.title2.weight(.semibold))
 
-            Picker(t(en: "Icon source", zh: "图标来源"), selection: $iconMode) {
-                ForEach(IconMode.allCases) { mode in
-                    Text(mode.title(language: appLanguage)).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: iconMode) { _, newMode in
-                focusedField = newMode == .sfSymbol ? .symbolName : .emoji
-            }
+            iconModePicker
+        }
+    }
 
-            if iconMode == .sfSymbol {
-                Text(t(en: "Symbol", zh: "符号"))
-                    .font(.headline)
-
-                TextField(t(en: "SF Symbol name", zh: "SF Symbol 名称"), text: $symbolName)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focusedField, equals: .symbolName)
-
-                TextField(t(en: "Search symbols", zh: "搜索符号"), text: $symbolQuery)
-                    .textFieldStyle(.roundedBorder)
-
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
-                        ForEach(filteredSymbols, id: \.self) { symbol in
-                            SymbolPickerCell(
-                                symbol: symbol,
-                                isSelected: symbol == symbolName
-                            ) {
-                                symbolName = symbol
-                            }
-                        }
-                    }
-                    .padding(1)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(1)
-            } else {
-                Text(t(en: "Emoji", zh: "表情符号"))
-                    .font(.headline)
-
-                TextField(t(en: "Emoji", zh: "表情符号"), text: $emoji)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($focusedField, equals: .emoji)
-                    .background(SelectAllTextFieldContent(selectionToken: emojiPickerSelectionToken))
-
-                Button(t(en: "Open System Emoji Picker", zh: "打开系统表情符号选择器"), action: openEmojiPicker)
-                    .buttonStyle(.bordered)
-
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 10)], spacing: 10) {
-                        ForEach(suggestedEmojis, id: \.self) { item in
-                            EmojiPickerCell(
-                                emoji: item,
-                                isSelected: item == emoji
-                            ) {
-                                emoji = item
-                            }
-                        }
-                    }
-                    .padding(1)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(1)
+    private var iconModePicker: some View {
+        Picker(t(en: "Icon source", zh: "图标来源"), selection: $iconMode) {
+            ForEach(IconMode.allCases) { mode in
+                Text(mode.title(language: appLanguage)).tag(mode)
             }
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .pickerStyle(.segmented)
+        .onChange(of: iconMode) { _, newMode in
+            focusedField = newMode == .sfSymbol ? .symbolName : .emoji
+        }
+    }
+
+    @ViewBuilder
+    private var sourceControls: some View {
+        if iconMode == .sfSymbol {
+            symbolControls
+        } else {
+            emojiControls
+        }
+    }
+
+    private var symbolControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(t(en: "Symbol", zh: "符号"))
+                .font(.headline)
+
+            TextField(t(en: "SF Symbol name", zh: "SF Symbol 名称"), text: $symbolName)
+                .textFieldStyle(.roundedBorder)
+                .focused($focusedField, equals: .symbolName)
+
+            TextField(t(en: "Search symbols", zh: "搜索符号"), text: $symbolQuery)
+                .textFieldStyle(.roundedBorder)
+
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
+                    ForEach(filteredSymbols, id: \.self) { symbol in
+                        SymbolPickerCell(
+                            symbol: symbol,
+                            isSelected: symbol == symbolName
+                        ) {
+                            symbolName = symbol
+                        }
+                    }
+                }
+                .padding(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(1)
+        }
+    }
+
+    private var emojiControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(t(en: "Emoji", zh: "表情符号"))
+                .font(.headline)
+
+            TextField(t(en: "Emoji", zh: "表情符号"), text: $emoji)
+                .textFieldStyle(.roundedBorder)
+                .focused($focusedField, equals: .emoji)
+                .background(SelectAllTextFieldContent(selectionToken: emojiPickerSelectionToken))
+
+            Button(t(en: "Open System Emoji Picker", zh: "打开系统表情符号选择器"), action: openEmojiPicker)
+                .buttonStyle(.bordered)
+
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 10)], spacing: 10) {
+                    ForEach(suggestedEmojis, id: \.self) { item in
+                        EmojiPickerCell(
+                            emoji: item,
+                            isSelected: item == emoji
+                        ) {
+                            emoji = item
+                        }
+                    }
+                }
+                .padding(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(1)
+        }
     }
 
     private var settingsPanel: some View {
@@ -301,37 +337,38 @@ struct ContentView: View {
                     Text(t(en: "Appearance", zh: "外观"))
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(t(en: "Icon set name", zh: "图标集名称"))
-                        .font(.headline)
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 12) {
+                        TextField(t(en: "Icon set name", zh: "图标集名称"), text: $iconSetName)
+                            .textFieldStyle(.roundedBorder)
 
-                    TextField(t(en: "Icon set name", zh: "图标集名称"), text: $iconSetName)
-                        .textFieldStyle(.roundedBorder)
+                        Label(normalizedIconSetName, systemImage: "folder")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
 
-                    Text(normalizedIconSetName)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(t(en: "Export channels", zh: "导出渠道"))
+                                .font(.headline)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(t(en: "Export channels", zh: "导出渠道"))
-                            .font(.headline)
-
-                        HStack(spacing: 14) {
-                            ForEach(IconRenderer.ExportPlatform.allCases, id: \.self) { platform in
-                                Toggle(platform.title, isOn: binding(for: platform))
+                            HStack(spacing: 14) {
+                                ForEach(IconRenderer.ExportPlatform.allCases, id: \.self) { platform in
+                                    Toggle(platform.title, isOn: binding(for: platform))
+                                }
                             }
                         }
+
+                        Button(t(en: "Export", zh: "导出"), action: exportIconSet)
+                            .buttonStyle(.borderedProminent)
+
+                        if !exportMessage.isEmpty {
+                            Label(exportMessage, systemImage: exportSucceeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
+                                .foregroundStyle(exportSucceeded ? .green : .red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
-
-                    Button(t(en: "Export", zh: "导出"), action: exportIconSet)
-                        .buttonStyle(.borderedProminent)
-
-                    if !exportMessage.isEmpty {
-                        Label(exportMessage, systemImage: exportSucceeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
-                            .foregroundStyle(exportSucceeded ? .green : .red)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
+                    .padding(.top, 6)
+                } label: {
+                    Text(t(en: "Export", zh: "导出"))
                 }
             }
             .padding(24)
@@ -348,8 +385,15 @@ struct ContentView: View {
 
             Spacer(minLength: 0)
 
-            iconPreview(size: 196)
-                .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
+            ZStack {
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(.regularMaterial)
+                    .shadow(color: .black.opacity(0.08), radius: 24, y: 10)
+
+                iconPreview(size: 196)
+                    .shadow(color: .black.opacity(0.14), radius: 22, y: 10)
+            }
+            .frame(width: 280, height: 280)
 
             Text(previewTitle)
                 .font(.title3.weight(.semibold))
@@ -357,6 +401,8 @@ struct ContentView: View {
             HStack(spacing: 14) {
                 ForEach([32.0, 64.0, 96.0], id: \.self) { size in
                     iconPreview(size: size)
+                        .padding(8)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
 
