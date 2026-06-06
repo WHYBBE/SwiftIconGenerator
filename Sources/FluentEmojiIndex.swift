@@ -71,6 +71,15 @@ struct FluentEmojiIndex: Codable {
         return FileManager.default.fileExists(atPath: indexFileURL(for: trimmedPath).path)
     }
 
+    static func removeIndex(for folderPath: String) {
+        let trimmedPath = folderPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPath.isEmpty else { return }
+
+        let fileURL = indexFileURL(for: trimmedPath)
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
     static func load(folderPath: String) -> FluentEmojiIndex? {
         let trimmedPath = folderPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPath.isEmpty,

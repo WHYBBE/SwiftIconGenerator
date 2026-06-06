@@ -76,9 +76,9 @@ struct AppSettingsView: View {
             case .idle:
                 return language.text(en: "Not checked", zh: "未检测")
             case .valid(let count):
-                return language.text(en: "Detected \(count) Fluent Emoji assets", zh: "检测通过，找到 \(count) 个 Fluent Emoji 资源")
+                return language.text(en: "Indexed \(count) Fluent Emoji assets", zh: "已索引 \(count) 个 Fluent Emoji 资源")
             case .invalid:
-                return language.text(en: "No valid Fluent Emoji assets found", zh: "检测未通过，未找到有效 Fluent Emoji 资源")
+                return language.text(en: "No valid Fluent Emoji assets found", zh: "检测并索引失败，未找到有效 Fluent Emoji 资源")
             }
         }
 
@@ -109,7 +109,27 @@ struct AppSettingsView: View {
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("fluentEmojiFolderPath") private var fluentEmojiFolderPath = ""
     @AppStorage("fluentEmojiIndexVersion") private var fluentEmojiIndexVersion = ""
-    @State private var detectionState: DetectionState = .idle
+    @AppStorage("fluentEmojiIndexedFolderPath") private var fluentEmojiIndexedFolderPath = ""
+    @AppStorage("fluentEmojiIndexedAssetCount") private var fluentEmojiIndexedAssetCount = 0
+    @State private var indexingFailed = false
+    @State private var settingsWindow: NSWindow?
+
+    private var detectionState: DetectionState {
+        let trimmedPath = fluentEmojiFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if indexingFailed {
+            return .invalid
+        }
+
+        if !trimmedPath.isEmpty,
+           trimmedPath == fluentEmojiIndexedFolderPath,
+           fluentEmojiIndexedAssetCount > 0,
+           FluentEmojiIndex.indexExists(for: trimmedPath) {
+            return .valid(fluentEmojiIndexedAssetCount)
+        }
+
+        return .idle
+    }
 
     var body: some View {
         Form {
@@ -133,7 +153,9 @@ struct AppSettingsView: View {
                     HStack(spacing: 8) {
                         Button(t(en: "Choose", zh: "选择"), action: chooseFluentEmojiFolder)
 
-                        Button(t(en: "Detect", zh: "检测"), action: detectFluentEmojiFolder)
+                        Button(t(en: "Detect and Index", zh: "检测并索引"), action: detectAndIndexFluentEmojiFolder)
+
+                        Button(t(en: "Clear", zh: "清除"), action: clearFluentEmojiFolder)
 
                         Spacer()
                     }
@@ -148,9 +170,12 @@ struct AppSettingsView: View {
         .frame(width: 420)
         .padding(20)
         .preferredColorScheme(appTheme.colorScheme)
+        .background(SettingsWindowAccessor { window in
+            settingsWindow = window
+        })
         .onChange(of: fluentEmojiFolderPath) { _, _ in
             fluentEmojiIndexVersion = ""
-            detectionState = .idle
+            indexingFailed = false
         }
     }
 
@@ -167,24 +192,67 @@ struct AppSettingsView: View {
         panel.prompt = t(en: "Choose", zh: "选择")
         panel.message = t(en: "Choose a Fluent Emoji repository folder", zh: "选择 Fluent Emoji 仓库文件夹")
 
-        guard panel.runModal() == .OK, let folderURL = panel.url else {
+        guard let settingsWindow else {
+            chooseFluentEmojiFolder(from: panel.runModal(), url: panel.url)
             return
         }
 
-        fluentEmojiFolderPath = folderURL.path
-        fluentEmojiIndexVersion = ""
-        detectionState = .idle
+        panel.beginSheetModal(for: settingsWindow) { response in
+            chooseFluentEmojiFolder(from: response, url: panel.url)
+        }
     }
 
-    private func detectFluentEmojiFolder() {
+    private func chooseFluentEmojiFolder(from response: NSApplication.ModalResponse, url: URL?) {
+        guard response == .OK, let url else { return }
+
+        fluentEmojiFolderPath = url.path
+        fluentEmojiIndexVersion = ""
+        indexingFailed = false
+    }
+
+    private func detectAndIndexFluentEmojiFolder() {
+        let trimmedPath = fluentEmojiFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard let index = FluentEmojiIndex.build(folderPath: fluentEmojiFolderPath),
               (try? index.save()) != nil else {
             fluentEmojiIndexVersion = ""
-            detectionState = .invalid
+            fluentEmojiIndexedFolderPath = ""
+            fluentEmojiIndexedAssetCount = 0
+            indexingFailed = true
             return
         }
 
+        fluentEmojiIndexedFolderPath = trimmedPath
+        fluentEmojiIndexedAssetCount = index.assetCount
         fluentEmojiIndexVersion = UUID().uuidString
-        detectionState = .valid(index.assetCount)
+        indexingFailed = false
+    }
+
+    private func clearFluentEmojiFolder() {
+        FluentEmojiIndex.removeIndex(for: fluentEmojiFolderPath)
+        FluentEmojiIndex.removeIndex(for: fluentEmojiIndexedFolderPath)
+        fluentEmojiFolderPath = ""
+        fluentEmojiIndexVersion = ""
+        fluentEmojiIndexedFolderPath = ""
+        fluentEmojiIndexedAssetCount = 0
+        indexingFailed = false
+    }
+}
+
+private struct SettingsWindowAccessor: NSViewRepresentable {
+    let onResolve: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            onResolve(view.window)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            onResolve(nsView.window)
+        }
     }
 }
