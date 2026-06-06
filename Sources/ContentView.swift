@@ -94,7 +94,7 @@ struct ContentView: View {
         var exportPlatforms: [IconRenderer.ExportPlatform.RawValue]
     }
 
-    private struct ColorValue: Codable {
+    private struct ColorValue: Codable, Equatable {
         var red: Double
         var green: Double
         var blue: Double
@@ -136,6 +136,7 @@ struct ContentView: View {
     @State private var emojiPickerSelectionToken = 0
     @State private var projectColumnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedProjectID: UUID?
+    @State private var projectPendingDeletion: SavedProject?
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("exportPlatforms") private var storedExportPlatforms = Self.defaultExportPlatformRawValues
@@ -193,6 +194,32 @@ struct ContentView: View {
         .onChange(of: exportPlatforms) { _, newPlatforms in
             saveExportPlatforms(newPlatforms)
         }
+        .alert(
+            t(en: "Delete Project", zh: "删除项目"),
+            isPresented: deleteConfirmationPresented,
+            presenting: projectPendingDeletion
+        ) { project in
+            Button(t(en: "Cancel", zh: "取消"), role: .cancel) {
+                projectPendingDeletion = nil
+            }
+
+            Button(t(en: "Delete", zh: "删除"), role: .destructive) {
+                deleteConfirmed(project: project)
+            }
+        } message: { project in
+            Text(t(en: "Delete", zh: "删除") + " \(project.name)?")
+        }
+    }
+
+    private var deleteConfirmationPresented: Binding<Bool> {
+        Binding(
+            get: { projectPendingDeletion != nil },
+            set: { isPresented in
+                if !isPresented {
+                    projectPendingDeletion = nil
+                }
+            }
+        )
     }
 
     private var mainWorkspace: some View {
@@ -214,11 +241,11 @@ struct ContentView: View {
     }
 
     private var projectSidebar: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             projectSidebarHeader
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 8) {
+                LazyVStack(alignment: .leading, spacing: 6) {
                     ForEach(savedProjects) { project in
                         Button {
                             apply(project: project)
@@ -237,9 +264,20 @@ struct ContentView: View {
                                 }
 
                                 Spacer(minLength: 0)
+
+                                Button {
+                                    projectPendingDeletion = project
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                                .help(t(en: "Delete project", zh: "删除项目"))
                             }
-                            .padding(10)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+                            .contentShape(Rectangle())
                             .background {
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                                     .fill(project.id == selectedProjectID ? Color.accentColor.opacity(0.16) : Color.clear)
@@ -250,7 +288,7 @@ struct ContentView: View {
                 }
             }
         }
-        .padding(18)
+        .padding(14)
         .frame(width: 240)
         .frame(maxHeight: .infinity)
     }
@@ -261,6 +299,14 @@ struct ContentView: View {
                 .font(.title3.weight(.semibold))
 
             Spacer()
+
+            Button {
+                resetEditor()
+            } label: {
+                Image(systemName: "plus")
+            }
+            .buttonStyle(.borderless)
+            .help(t(en: "New project", zh: "新建项目"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -486,8 +532,13 @@ struct ContentView: View {
                         }
 
                         HStack(spacing: 10) {
-                            Button(t(en: "Save Project", zh: "保存项目"), action: saveCurrentProject)
+                            Button(saveProjectTitle, action: saveCurrentProject)
                                 .buttonStyle(.bordered)
+
+                            if canSaveAsNewProject {
+                                Button(t(en: "Save as New", zh: "另存为新项目"), action: saveCurrentProjectAsNew)
+                                    .buttonStyle(.bordered)
+                            }
 
                             Button(t(en: "Export", zh: "导出"), action: exportIconSet)
                                 .buttonStyle(.borderedProminent)
@@ -635,6 +686,21 @@ struct ContentView: View {
         return projects.sorted { $0.updatedAt > $1.updatedAt }
     }
 
+    private var saveProjectTitle: String {
+        selectedProjectID == nil
+            ? t(en: "Save as Project", zh: "保存为项目")
+            : t(en: "Update Project", zh: "更新项目")
+    }
+
+    private var canSaveAsNewProject: Bool {
+        guard let selectedProjectID,
+              let selectedProject = savedProjects.first(where: { $0.id == selectedProjectID }) else {
+            return false
+        }
+
+        return hasChanges(from: selectedProject)
+    }
+
     private func saveCurrentProject() {
         var projects = savedProjects
         let project = makeCurrentProject()
@@ -650,9 +716,17 @@ struct ContentView: View {
         persist(projects: projects)
     }
 
-    private func makeCurrentProject() -> SavedProject {
+    private func saveCurrentProjectAsNew() {
+        var projects = savedProjects
+        let project = makeCurrentProject(id: UUID())
+        projects.insert(project, at: 0)
+        selectedProjectID = project.id
+        persist(projects: projects)
+    }
+
+    private func makeCurrentProject(id: UUID? = nil) -> SavedProject {
         SavedProject(
-            id: selectedProjectID ?? UUID(),
+            id: id ?? selectedProjectID ?? UUID(),
             name: projectName,
             updatedAt: Date(),
             symbolName: symbolName,
@@ -672,6 +746,25 @@ struct ContentView: View {
             iconSetName: iconSetName,
             exportPlatforms: exportPlatforms.map(\.rawValue)
         )
+    }
+
+    private func hasChanges(from project: SavedProject) -> Bool {
+        project.symbolName != symbolName ||
+            project.iconMode != iconMode ||
+            project.emoji != emoji ||
+            project.foregroundColor != ColorValue(color: foregroundColor) ||
+            project.useForegroundGradient != useForegroundGradient ||
+            project.secondaryForegroundColor != ColorValue(color: secondaryForegroundColor) ||
+            project.backgroundColor != ColorValue(color: backgroundColor) ||
+            project.useGradient != useGradient ||
+            project.secondaryBackgroundColor != ColorValue(color: secondaryBackgroundColor) ||
+            project.cornerRadiusRatio != cornerRadiusRatio ||
+            project.visualSizePreset != visualSizePreset ||
+            project.contentPaddingRatio != contentPaddingRatio ||
+            project.symbolScaleRatio != symbolScaleRatio ||
+            project.shadowStrength != shadowStrength ||
+            project.iconSetName != iconSetName ||
+            Set(project.exportPlatforms) != Set(exportPlatforms.map(\.rawValue))
     }
 
     private var projectName: String {
@@ -702,6 +795,40 @@ struct ContentView: View {
         shadowStrength = project.shadowStrength
         iconSetName = project.iconSetName
         exportPlatforms = Set(project.exportPlatforms.compactMap(IconRenderer.ExportPlatform.init(rawValue:)))
+    }
+
+    private func delete(project: SavedProject) {
+        projectPendingDeletion = project
+    }
+
+    private func deleteConfirmed(project: SavedProject) {
+        let projects = savedProjects.filter { $0.id != project.id }
+        persist(projects: projects)
+        projectPendingDeletion = nil
+        resetEditor()
+    }
+
+    private func resetEditor() {
+        selectedProjectID = nil
+        symbolName = "sparkles"
+        symbolQuery = ""
+        iconMode = .sfSymbol
+        emoji = "🚀"
+        foregroundColor = .white
+        useForegroundGradient = false
+        secondaryForegroundColor = Color(red: 1.0, green: 0.86, blue: 0.25)
+        backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
+        useGradient = true
+        secondaryBackgroundColor = Color(red: 0.39, green: 0.20, blue: 0.98)
+        cornerRadiusRatio = 0.24
+        visualSizePreset = .balanced
+        contentPaddingRatio = 0.10
+        symbolScaleRatio = 0.44
+        shadowStrength = 0.25
+        iconSetName = "AppIcon"
+        exportMessage = ""
+        exportSucceeded = false
+        exportPlatforms = Set(IconRenderer.ExportPlatform.allCases)
     }
 
     private func persist(projects: [SavedProject]) {
