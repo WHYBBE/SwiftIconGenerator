@@ -64,6 +64,10 @@ struct ContentView: View {
         }
     }
 
+    private static let defaultExportPlatformRawValues = IconRenderer.ExportPlatform.allCases
+        .map(\.rawValue)
+        .joined(separator: ",")
+
     @State private var symbolName = "sparkles"
     @State private var symbolQuery = ""
     @State private var iconMode: IconMode = .sfSymbol
@@ -85,6 +89,7 @@ struct ContentView: View {
     @State private var emojiPickerSelectionToken = 0
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
+    @AppStorage("exportPlatforms") private var storedExportPlatforms = Self.defaultExportPlatformRawValues
     @FocusState private var focusedField: Field?
 
     private let suggestedEmojis = [
@@ -132,8 +137,12 @@ struct ContentView: View {
         .onAppear {
             DispatchQueue.main.async {
                 applyVisualSizePreset(visualSizePreset)
+                loadExportPlatforms()
                 focusedField = .symbolName
             }
+        }
+        .onChange(of: exportPlatforms) { _, newPlatforms in
+            saveExportPlatforms(newPlatforms)
         }
     }
 
@@ -450,6 +459,23 @@ struct ContentView: View {
 
     private var normalizedExportPlatforms: Set<IconRenderer.ExportPlatform> {
         exportPlatforms.isEmpty ? Set(IconRenderer.ExportPlatform.allCases) : exportPlatforms
+    }
+
+    private func loadExportPlatforms() {
+        let platforms = Set(
+            storedExportPlatforms
+                .split(separator: ",")
+                .compactMap { IconRenderer.ExportPlatform(rawValue: String($0)) }
+        )
+
+        exportPlatforms = platforms
+    }
+
+    private func saveExportPlatforms(_ platforms: Set<IconRenderer.ExportPlatform>) {
+        storedExportPlatforms = platforms
+            .sorted { $0.rawValue < $1.rawValue }
+            .map(\.rawValue)
+            .joined(separator: ",")
     }
 
     private func binding(for platform: IconRenderer.ExportPlatform) -> Binding<Bool> {
