@@ -285,21 +285,25 @@ struct ContentView: View {
                             }
                         }
 
-                        ColorSettingRow(title: t(en: "Foreground", zh: "前景色"), color: $foregroundColor)
+                        GradientColorSection(
+                            title: t(en: "Foreground", zh: "前景"),
+                            startTitle: t(en: "Start color", zh: "起始色"),
+                            endTitle: t(en: "End color", zh: "结束色"),
+                            gradientTitle: t(en: "Gradient", zh: "渐变"),
+                            startColor: $foregroundColor,
+                            endColor: $secondaryForegroundColor,
+                            usesGradient: $useForegroundGradient
+                        )
 
-                        Toggle(t(en: "Foreground gradient", zh: "前景渐变"), isOn: $useForegroundGradient)
-
-                        if useForegroundGradient {
-                            ColorSettingRow(title: t(en: "Foreground end", zh: "前景结束色"), color: $secondaryForegroundColor)
-                        }
-
-                        ColorSettingRow(title: t(en: "Background", zh: "背景色"), color: $backgroundColor)
-
-                        Toggle(t(en: "Use gradient", zh: "使用渐变"), isOn: $useGradient)
-
-                        if useGradient {
-                            ColorSettingRow(title: t(en: "Gradient end", zh: "渐变结束色"), color: $secondaryBackgroundColor)
-                        }
+                        GradientColorSection(
+                            title: t(en: "Background", zh: "背景"),
+                            startTitle: t(en: "Start color", zh: "起始色"),
+                            endTitle: t(en: "End color", zh: "结束色"),
+                            gradientTitle: t(en: "Gradient", zh: "渐变"),
+                            startColor: $backgroundColor,
+                            endColor: $secondaryBackgroundColor,
+                            usesGradient: $useGradient
+                        )
 
                         SliderSettingRow(
                             title: t(en: "Corner radius", zh: "圆角"),
@@ -383,6 +387,7 @@ struct ContentView: View {
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -585,6 +590,38 @@ private struct ColorSettingRow: View {
             Spacer()
             ColorPicker(title, selection: $color, supportsOpacity: true)
                 .labelsHidden()
+        }
+    }
+}
+
+private struct GradientColorSection: View {
+    let title: String
+    let startTitle: String
+    let endTitle: String
+    let gradientTitle: String
+    @Binding var startColor: Color
+    @Binding var endColor: Color
+    @Binding var usesGradient: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(title)
+                    .font(.headline)
+
+                Spacer()
+
+                Toggle(gradientTitle, isOn: $usesGradient)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .help(gradientTitle)
+            }
+
+            ColorSettingRow(title: startTitle, color: $startColor)
+
+            if usesGradient {
+                ColorSettingRow(title: endTitle, color: $endColor)
+            }
         }
     }
 }
