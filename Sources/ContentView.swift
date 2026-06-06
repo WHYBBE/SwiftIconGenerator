@@ -166,6 +166,10 @@ struct ContentView: View {
                 return "High Contrast"
             }
         }
+
+        var usesForegroundColor: Bool {
+            self == .highContrast
+        }
     }
 
     @State private var symbolName = "sparkles"
@@ -554,6 +558,7 @@ struct ContentView: View {
                     ForEach(filteredFluentEmojiAssets) { asset in
                         FluentEmojiPickerCell(
                             asset: asset,
+                            isTemplate: fluentEmojiStyle.usesForegroundColor,
                             isSelected: asset.imageURL.path == selectedFluentEmojiAssetPath
                         ) {
                             selectedFluentEmojiAssetPath = asset.imageURL.path
@@ -590,7 +595,7 @@ struct ContentView: View {
                             }
                         }
 
-                        if iconMode == .sfSymbol {
+                        if iconMode == .sfSymbol || (iconMode == .fluentEmoji && fluentEmojiStyle.usesForegroundColor) {
                             GradientColorSection(
                                 title: t(en: "Foreground", zh: "前景"),
                                 startTitle: t(en: "Start color", zh: "起始色"),
@@ -823,7 +828,7 @@ struct ContentView: View {
                 return .symbol("questionmark")
             }
 
-            return .image(asset.imageURL)
+            return .image(asset.imageURL, isTemplate: fluentEmojiStyle.usesForegroundColor)
         }
     }
 
@@ -1313,6 +1318,7 @@ private struct EmojiPickerCell: View {
 
 private struct FluentEmojiPickerCell: View {
     let asset: ContentView.FluentEmojiAsset
+    let isTemplate: Bool
     let isSelected: Bool
     let action: () -> Void
 
@@ -1321,8 +1327,10 @@ private struct FluentEmojiPickerCell: View {
             VStack(spacing: 6) {
                 Image(nsImage: NSImage(contentsOf: asset.imageURL) ?? NSImage())
                     .resizable()
+                    .renderingMode(isTemplate ? .template : .original)
                     .interpolation(.high)
                     .scaledToFit()
+                    .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
 
                 Text(asset.name)

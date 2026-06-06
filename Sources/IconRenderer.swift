@@ -5,7 +5,7 @@ struct IconRenderer {
     enum IconContent {
         case symbol(String)
         case emoji(String)
-        case image(URL)
+        case image(URL, isTemplate: Bool)
     }
 
     enum ExportPlatform: String, CaseIterable, Hashable {
@@ -181,13 +181,25 @@ struct IconRenderer {
             setContentShadow(size: size)
             attributedEmoji.draw(in: drawRect)
 
-        case .image(let imageURL):
+        case .image(let imageURL, let isTemplate):
             guard let sourceImage = NSImage(contentsOf: imageURL), sourceImage.isValid else {
                 throw IconRendererError.missingEmoji
             }
 
             let imageRect = centeredSquareRect(in: iconRect, ratio: symbolScaleRatio)
             let drawRect = aspectFitRect(for: sourceImage.size, in: imageRect)
+
+            if isTemplate {
+                let foregroundImage = makeGradientSymbolImage(
+                    size: size,
+                    symbol: sourceImage,
+                    symbolRect: drawRect
+                )
+                setContentShadow(size: size)
+                foregroundImage.draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+                break
+            }
+
             setContentShadow(size: size)
             sourceImage.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1)
         }
