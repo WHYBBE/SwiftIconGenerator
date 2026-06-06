@@ -392,7 +392,9 @@ struct ContentView: View {
     }
 
     private var previewPanel: some View {
-        VStack(spacing: 20) {
+        let previewImage = makePreviewImage(size: 196)
+
+        return VStack(spacing: 20) {
             Text(t(en: "Preview", zh: "预览"))
                 .font(.title2.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -404,7 +406,7 @@ struct ContentView: View {
                     .fill(.regularMaterial)
                     .shadow(color: .black.opacity(0.08), radius: 24, y: 10)
 
-                iconPreview(size: 196)
+                iconPreview(image: previewImage, size: 196)
                     .shadow(color: .black.opacity(0.14), radius: 22, y: 10)
             }
             .frame(width: 280, height: 280)
@@ -414,7 +416,7 @@ struct ContentView: View {
 
             HStack(spacing: 14) {
                 ForEach([32.0, 64.0, 96.0], id: \.self) { size in
-                    iconPreview(size: size)
+                    iconPreview(image: previewImage, size: size)
                         .padding(8)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
@@ -437,8 +439,8 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func iconPreview(size: CGFloat) -> some View {
-        if let image = makePreviewImage(size: size) {
+    private func iconPreview(image: NSImage?, size: CGFloat) -> some View {
+        if let image {
             Image(nsImage: image)
                 .resizable()
                 .interpolation(.high)

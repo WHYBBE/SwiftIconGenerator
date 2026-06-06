@@ -134,13 +134,10 @@ struct IconRenderer {
             let tintedSymbol = configuredSymbol.withSymbolConfiguration(.init(paletteColors: [foregroundColor])) ?? configuredSymbol
             let symbolRect = centeredRect(for: tintedSymbol.size, canvasRect: iconRect)
 
-            if shadowStrength > 0 {
-                let shadowSymbol = makeShadowSymbolImage(
-                    size: size,
-                    symbol: tintedSymbol,
-                    symbolRect: symbolRect
-                )
-                shadowSymbol.draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+            if !useForegroundGradient {
+                setContentShadow(size: size)
+                tintedSymbol.draw(in: symbolRect)
+                return finish(image: image)
             }
 
             let foregroundSymbol = makeGradientSymbolImage(
@@ -149,12 +146,8 @@ struct IconRenderer {
                 symbolRect: symbolRect
             )
 
-            NSGraphicsContext.saveGraphicsState()
-            let noShadow = NSShadow()
-            noShadow.shadowColor = .clear
-            noShadow.set()
+            setContentShadow(size: size)
             foregroundSymbol.draw(in: NSRect(x: 0, y: 0, width: size, height: size))
-            NSGraphicsContext.restoreGraphicsState()
 
         case .emoji(let emoji):
             let trimmedEmoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -188,6 +181,10 @@ struct IconRenderer {
             attributedEmoji.draw(in: drawRect)
         }
 
+        return finish(image: image)
+    }
+
+    private func finish(image: NSImage) -> NSImage {
         image.unlockFocus()
         return image
     }
@@ -271,27 +268,6 @@ struct IconRenderer {
         shadow.shadowOffset = NSSize(width: 0, height: -(size * 0.025))
         shadow.shadowBlurRadius = size * 0.06
         shadow.set()
-    }
-
-    private func makeShadowSymbolImage(size: CGFloat, symbol: NSImage, symbolRect: NSRect) -> NSImage {
-        let canvasRect = NSRect(x: 0, y: 0, width: size, height: size)
-        let image = NSImage(size: NSSize(width: size, height: size))
-        image.lockFocus()
-
-        NSColor.clear.setFill()
-        canvasRect.fill()
-
-        setContentShadow(size: size)
-        let maskSymbol = symbol.withSymbolConfiguration(.init(paletteColors: [.black])) ?? symbol
-        maskSymbol.draw(in: symbolRect, from: .zero, operation: .sourceOver, fraction: 1)
-
-        let noShadow = NSShadow()
-        noShadow.shadowColor = .clear
-        noShadow.set()
-        maskSymbol.draw(in: symbolRect, from: .zero, operation: .destinationOut, fraction: 1)
-
-        image.unlockFocus()
-        return image
     }
 
     private func makeGradientSymbolImage(size: CGFloat, symbol: NSImage, symbolRect: NSRect) -> NSImage {
