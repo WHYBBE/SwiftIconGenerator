@@ -5,6 +5,7 @@ struct IconRenderer {
     enum IconContent {
         case symbol(String)
         case emoji(String)
+        case image(URL)
     }
 
     enum ExportPlatform: String, CaseIterable, Hashable {
@@ -179,6 +180,16 @@ struct IconRenderer {
 
             setContentShadow(size: size)
             attributedEmoji.draw(in: drawRect)
+
+        case .image(let imageURL):
+            guard let sourceImage = NSImage(contentsOf: imageURL), sourceImage.isValid else {
+                throw IconRendererError.missingEmoji
+            }
+
+            let imageRect = centeredSquareRect(in: iconRect, ratio: symbolScaleRatio)
+            let drawRect = aspectFitRect(for: sourceImage.size, in: imageRect)
+            setContentShadow(size: size)
+            sourceImage.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1)
         }
 
         return finish(image: image)
@@ -383,6 +394,24 @@ struct IconRenderer {
             y: canvasRect.midY - (edge / 2),
             width: edge,
             height: edge
+        )
+    }
+
+    private func aspectFitRect(for imageSize: NSSize, in rect: NSRect) -> NSRect {
+        let aspectRatio = imageSize.height == 0 ? 1 : imageSize.width / imageSize.height
+        var width = rect.width
+        var height = width / max(aspectRatio, 0.01)
+
+        if height > rect.height {
+            height = rect.height
+            width = height * max(aspectRatio, 0.01)
+        }
+
+        return NSRect(
+            x: rect.midX - (width / 2),
+            y: rect.midY - (height / 2),
+            width: width,
+            height: height
         )
     }
 

@@ -10,6 +10,7 @@ struct ContentView: View {
     private enum IconMode: String, CaseIterable, Codable, Identifiable {
         case sfSymbol = "SF Symbols"
         case emoji = "Emoji"
+        case fluentEmoji = "Fluent Emoji"
 
         var id: String { rawValue }
 
@@ -19,8 +20,16 @@ struct ContentView: View {
                 return "SF Symbols"
             case .emoji:
                 return language.text(en: "Emoji", zh: "表情符号")
+            case .fluentEmoji:
+                return "Fluent Emoji"
             }
         }
+    }
+
+    fileprivate struct FluentEmojiAsset: Identifiable, Hashable {
+        var id: String { imageURL.path }
+        let name: String
+        let imageURL: URL
     }
 
     private enum VisualSizePreset: String, CaseIterable, Codable, Identifiable {
@@ -92,6 +101,7 @@ struct ContentView: View {
         var shadowStrength: Double
         var iconSetName: String
         var exportPlatforms: [IconRenderer.ExportPlatform.RawValue]
+        var fluentEmojiAssetPath: String?
     }
 
     private struct ColorValue: Codable, Equatable {
@@ -129,6 +139,8 @@ struct ContentView: View {
     @State private var symbolScaleRatio = 0.44
     @State private var shadowStrength = 0.25
     @State private var iconSetName = "AppIcon"
+    @State private var fluentEmojiQuery = ""
+    @State private var selectedFluentEmojiAssetPath = ""
     @State private var exportPlatforms: Set<IconRenderer.ExportPlatform> = Set(IconRenderer.ExportPlatform.allCases)
     @State private var exportMessage = ""
     @State private var exportSucceeded = false
@@ -141,6 +153,7 @@ struct ContentView: View {
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("exportPlatforms") private var storedExportPlatforms = Self.defaultExportPlatformRawValues
     @AppStorage("savedProjects") private var savedProjectsData = "[]"
+    @AppStorage("fluentEmojiFolderPath") private var fluentEmojiFolderPath = ""
     @FocusState private var focusedField: Field?
 
     private let suggestedEmojis = [
@@ -159,6 +172,35 @@ struct ContentView: View {
         return SFSymbolCatalog.all.filter {
             $0.localizedCaseInsensitiveContains(trimmedQuery)
         }
+    }
+
+    private var availableIconModes: [IconMode] {
+        isFluentEmojiFolderValid ? IconMode.allCases : [.sfSymbol, .emoji]
+    }
+
+    private var fluentEmojiAssets: [FluentEmojiAsset] {
+        scanFluentEmojiAssets(folderPath: fluentEmojiFolderPath)
+    }
+
+    private var filteredFluentEmojiAssets: [FluentEmojiAsset] {
+        let trimmedQuery = fluentEmojiQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedQuery.isEmpty else {
+            return fluentEmojiAssets
+        }
+
+        return fluentEmojiAssets.filter {
+            $0.name.localizedCaseInsensitiveContains(trimmedQuery)
+        }
+    }
+
+    private var selectedFluentEmojiAsset: FluentEmojiAsset? {
+        fluentEmojiAssets.first { $0.imageURL.path == selectedFluentEmojiAssetPath }
+            ?? fluentEmojiAssets.first
+    }
+
+    private var isFluentEmojiFolderValid: Bool {
+        !fluentEmojiAssets.isEmpty
     }
 
     var body: some View {
@@ -193,6 +235,15 @@ struct ContentView: View {
         }
         .onChange(of: exportPlatforms) { _, newPlatforms in
             saveExportPlatforms(newPlatforms)
+        }
+        .onChange(of: fluentEmojiFolderPath) { _, _ in
+            if !isFluentEmojiFolderValid, iconMode == .fluentEmoji {
+                iconMode = .sfSymbol
+            }
+
+            if selectedFluentEmojiAsset == nil {
+                selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
+            }
         }
         .alert(
             t(en: "Delete Project", zh: "删除项目"),
@@ -340,14 +391,22 @@ struct ContentView: View {
 
     private var iconModePicker: some View {
         Picker(t(en: "Icon source", zh: "图标来源"), selection: $iconMode) {
-            ForEach(IconMode.allCases) { mode in
+            ForEach(availableIconModes) { mode in
                 Text(mode.title(language: appLanguage)).tag(mode)
             }
         }
         .pickerStyle(.segmented)
         .labelsHidden()
         .onChange(of: iconMode) { _, newMode in
-            focusedField = newMode == .sfSymbol ? .symbolName : .emoji
+            switch newMode {
+            case .sfSymbol:
+                focusedField = .symbolName
+            case .emoji:
+                focusedField = .emoji
+            case .fluentEmoji:
+                focusedField = nil
+                selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
+            }
         }
     }
 
@@ -355,8 +414,10 @@ struct ContentView: View {
     private var sourceControls: some View {
         if iconMode == .sfSymbol {
             symbolControls
-        } else {
+        } else if iconMode == .emoji {
             emojiControls
+        } else {
+            fluentEmojiControls
         }
     }
 
@@ -411,6 +472,32 @@ struct ContentView: View {
                             isSelected: item == emoji
                         ) {
                             emoji = item
+                        }
+                    }
+                }
+                .padding(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(1)
+        }
+    }
+
+    private var fluentEmojiControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Fluent Emoji")
+                .font(.headline)
+
+            TextField(t(en: "Search Fluent Emoji", zh: "搜索 Fluent Emoji"), text: $fluentEmojiQuery)
+                .textFieldStyle(.roundedBorder)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 86), spacing: 10)], spacing: 10) {
+                    ForEach(filteredFluentEmojiAssets) { asset in
+                        FluentEmojiPickerCell(
+                            asset: asset,
+                            isSelected: asset.imageURL.path == selectedFluentEmojiAssetPath
+                        ) {
+                            selectedFluentEmojiAssetPath = asset.imageURL.path
                         }
                     }
                 }
@@ -672,6 +759,12 @@ struct ContentView: View {
             return .symbol(symbolName)
         case .emoji:
             return .emoji(emoji)
+        case .fluentEmoji:
+            guard let asset = selectedFluentEmojiAsset else {
+                return .symbol("questionmark")
+            }
+
+            return .image(asset.imageURL)
         }
     }
 
@@ -681,6 +774,8 @@ struct ContentView: View {
             return symbolName
         case .emoji:
             return emoji
+        case .fluentEmoji:
+            return selectedFluentEmojiAsset?.name ?? "Fluent Emoji"
         }
     }
 
@@ -762,7 +857,8 @@ struct ContentView: View {
             symbolScaleRatio: symbolScaleRatio,
             shadowStrength: shadowStrength,
             iconSetName: iconSetName,
-            exportPlatforms: exportPlatforms.map(\.rawValue)
+            exportPlatforms: exportPlatforms.map(\.rawValue),
+            fluentEmojiAssetPath: selectedFluentEmojiAssetPath.isEmpty ? nil : selectedFluentEmojiAssetPath
         )
     }
 
@@ -782,7 +878,8 @@ struct ContentView: View {
             project.symbolScaleRatio != symbolScaleRatio ||
             project.shadowStrength != shadowStrength ||
             project.iconSetName != iconSetName ||
-            Set(project.exportPlatforms) != Set(exportPlatforms.map(\.rawValue))
+            Set(project.exportPlatforms) != Set(exportPlatforms.map(\.rawValue)) ||
+            (project.fluentEmojiAssetPath ?? "") != selectedFluentEmojiAssetPath
     }
 
     private var projectName: String {
@@ -813,6 +910,7 @@ struct ContentView: View {
         shadowStrength = project.shadowStrength
         iconSetName = project.iconSetName
         exportPlatforms = Set(project.exportPlatforms.compactMap(IconRenderer.ExportPlatform.init(rawValue:)))
+        selectedFluentEmojiAssetPath = project.fluentEmojiAssetPath ?? ""
     }
 
     private func delete(project: SavedProject) {
@@ -844,6 +942,8 @@ struct ContentView: View {
         symbolScaleRatio = 0.44
         shadowStrength = 0.25
         iconSetName = "AppIcon"
+        fluentEmojiQuery = ""
+        selectedFluentEmojiAssetPath = ""
         exportMessage = ""
         exportSucceeded = false
         exportPlatforms = Set(IconRenderer.ExportPlatform.allCases)
@@ -856,6 +956,82 @@ struct ContentView: View {
         }
 
         savedProjectsData = json
+    }
+
+    private func scanFluentEmojiAssets(folderPath: String) -> [FluentEmojiAsset] {
+        let trimmedPath = folderPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPath.isEmpty else { return [] }
+
+        let fileManager = FileManager.default
+        let rootURL = URL(fileURLWithPath: trimmedPath, isDirectory: true)
+        let assetsURL = rootURL.appendingPathComponent("assets", isDirectory: true)
+        var isDirectory: ObjCBool = false
+
+        guard fileManager.fileExists(atPath: assetsURL.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return []
+        }
+
+        guard let emojiFolders = try? fileManager.contentsOfDirectory(
+            at: assetsURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        return emojiFolders.compactMap { emojiFolder in
+            guard (try? emojiFolder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true,
+                  let imageURL = bestFluentEmojiImageURL(in: emojiFolder) else {
+                return nil
+            }
+
+            return FluentEmojiAsset(name: emojiFolder.lastPathComponent, imageURL: imageURL)
+        }
+        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func bestFluentEmojiImageURL(in emojiFolder: URL) -> URL? {
+        let fileManager = FileManager.default
+        let resourceKeys: [URLResourceKey] = [.isRegularFileKey]
+        guard let enumerator = fileManager.enumerator(
+            at: emojiFolder,
+            includingPropertiesForKeys: resourceKeys,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        let pngURLs = enumerator.compactMap { item -> URL? in
+            guard let url = item as? URL,
+                  url.pathExtension.localizedCaseInsensitiveCompare("png") == .orderedSame,
+                  (try? url.resourceValues(forKeys: Set(resourceKeys)).isRegularFile) == true else {
+                return nil
+            }
+
+            return url
+        }
+
+        return pngURLs.sorted { lhs, rhs in
+            fluentEmojiImageRank(lhs) < fluentEmojiImageRank(rhs)
+        }.first
+    }
+
+    private func fluentEmojiImageRank(_ url: URL) -> Int {
+        let path = url.path.lowercased()
+
+        if path.contains("/3d/") && !path.contains("/default/") && !path.contains("/light/") && !path.contains("/dark/") {
+            return 0
+        }
+
+        if path.contains("/default/3d/") {
+            return 1
+        }
+
+        if path.contains("/3d/") {
+            return 2
+        }
+
+        return 3
     }
 
     private func exportIconSet() {
@@ -1065,6 +1241,40 @@ private struct EmojiPickerCell: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(isSelected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isSelected ? 2 : 1)
                 }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct FluentEmojiPickerCell: View {
+    let asset: ContentView.FluentEmojiAsset
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(nsImage: NSImage(contentsOf: asset.imageURL) ?? NSImage())
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+
+                Text(asset.name)
+                    .font(.caption2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, minHeight: 76)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.16) : Color(nsColor: .controlBackgroundColor))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+            }
         }
         .buttonStyle(.plain)
     }
