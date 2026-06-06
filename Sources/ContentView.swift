@@ -427,8 +427,8 @@ struct ContentView: View {
                 Text(t(en: "Configuration", zh: "配置"))
                     .font(.title2.weight(.semibold))
 
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Group {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(t(en: "Visual size", zh: "视觉大小"))
 
@@ -506,53 +506,6 @@ struct ContentView: View {
                             shadowStrength = visualSizePreset.shadowStrength
                         }
                     }
-                    .padding(.top, 6)
-                } label: {
-                    Text(t(en: "Appearance", zh: "外观"))
-                }
-
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 12) {
-                        TextField(t(en: "Icon set name", zh: "图标集名称"), text: $iconSetName)
-                            .textFieldStyle(.roundedBorder)
-
-                        Label(normalizedIconSetName, systemImage: "folder")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(t(en: "Export channels", zh: "导出渠道"))
-                                .font(.headline)
-
-                            HStack(spacing: 14) {
-                                ForEach(IconRenderer.ExportPlatform.allCases, id: \.self) { platform in
-                                    Toggle(platform.title, isOn: binding(for: platform))
-                                }
-                            }
-                        }
-
-                        HStack(spacing: 10) {
-                            Button(saveProjectTitle, action: saveCurrentProject)
-                                .buttonStyle(.bordered)
-
-                            if canSaveAsNewProject {
-                                Button(t(en: "Save as New", zh: "另存为新项目"), action: saveCurrentProjectAsNew)
-                                    .buttonStyle(.bordered)
-                            }
-
-                            Button(t(en: "Export", zh: "导出"), action: exportIconSet)
-                                .buttonStyle(.borderedProminent)
-                        }
-
-                        if !exportMessage.isEmpty {
-                            Label(exportMessage, systemImage: exportSucceeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
-                                .foregroundStyle(exportSucceeded ? .green : .red)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    .padding(.top, 6)
-                } label: {
-                    Text(t(en: "Export", zh: "导出"))
                 }
             }
             .padding(24)
@@ -565,11 +518,32 @@ struct ContentView: View {
     private var previewPanel: some View {
         let previewImage = makePreviewImage(size: 196)
 
-        return VStack(spacing: 14) {
+        return VStack(spacing: 16) {
             Text(t(en: "Preview", zh: "预览"))
                 .font(.title2.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            previewContent(previewImage: previewImage)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            exportPanel
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(24)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(nsColor: .underPageBackgroundColor),
+                    Color(nsColor: .windowBackgroundColor)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+    }
+
+    private func previewContent(previewImage: NSImage?) -> some View {
+        VStack(spacing: 14) {
             Spacer(minLength: 0)
 
             ZStack {
@@ -595,18 +569,62 @@ struct ContentView: View {
 
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(nsColor: .underPageBackgroundColor),
-                    Color(nsColor: .windowBackgroundColor)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
+    }
+
+    private var exportPanel: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                TextField(t(en: "Icon set name", zh: "图标集名称"), text: $iconSetName)
+                    .textFieldStyle(.roundedBorder)
+
+                Label(normalizedIconSetName, systemImage: "folder")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(t(en: "Export channels", zh: "导出渠道"))
+                        .font(.headline)
+
+                    Grid(horizontalSpacing: 14, verticalSpacing: 8) {
+                        GridRow {
+                            ForEach([IconRenderer.ExportPlatform.iphone, .ipad], id: \.self) { platform in
+                                Toggle(platform.title, isOn: binding(for: platform))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+
+                        GridRow {
+                            ForEach([IconRenderer.ExportPlatform.appStore, .mac], id: \.self) { platform in
+                                Toggle(platform.title, isOn: binding(for: platform))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
+                }
+
+                HStack(spacing: 10) {
+                    Button(saveProjectTitle, action: saveCurrentProject)
+                        .buttonStyle(.bordered)
+
+                    if canSaveAsNewProject {
+                        Button(t(en: "Save as New", zh: "另存为新项目"), action: saveCurrentProjectAsNew)
+                            .buttonStyle(.bordered)
+                    }
+
+                    Button(t(en: "Export", zh: "导出"), action: exportIconSet)
+                        .buttonStyle(.borderedProminent)
+                }
+
+                if !exportMessage.isEmpty {
+                    Label(exportMessage, systemImage: exportSucceeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
+                        .foregroundStyle(exportSucceeded ? .green : .red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.top, 6)
+        } label: {
+            Text(t(en: "Export", zh: "导出"))
+        }
     }
 
     @ViewBuilder
