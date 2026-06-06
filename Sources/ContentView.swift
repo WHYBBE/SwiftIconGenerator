@@ -285,15 +285,17 @@ struct ContentView: View {
                             }
                         }
 
-                        GradientColorSection(
-                            title: t(en: "Foreground", zh: "前景"),
-                            startTitle: t(en: "Start color", zh: "起始色"),
-                            endTitle: t(en: "End color", zh: "结束色"),
-                            gradientTitle: t(en: "Gradient", zh: "渐变"),
-                            startColor: $foregroundColor,
-                            endColor: $secondaryForegroundColor,
-                            usesGradient: $useForegroundGradient
-                        )
+                        if iconMode == .sfSymbol {
+                            GradientColorSection(
+                                title: t(en: "Foreground", zh: "前景"),
+                                startTitle: t(en: "Start color", zh: "起始色"),
+                                endTitle: t(en: "End color", zh: "结束色"),
+                                gradientTitle: t(en: "Gradient", zh: "渐变"),
+                                startColor: $foregroundColor,
+                                endColor: $secondaryForegroundColor,
+                                usesGradient: $useForegroundGradient
+                            )
+                        }
 
                         GradientColorSection(
                             title: t(en: "Background", zh: "背景"),
