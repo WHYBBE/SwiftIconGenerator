@@ -30,6 +30,8 @@ struct ContentView: View {
 
         var id: String { rawValue }
 
+        var cornerRadiusRatio: Double { 0.24 }
+
         func title(language: AppLanguage) -> String {
             switch self {
             case .compact:
@@ -62,6 +64,8 @@ struct ContentView: View {
                 return 0.50
             }
         }
+
+        var shadowStrength: Double { 0.25 }
     }
 
     private static let defaultExportPlatformRawValues = IconRenderer.ExportPlatform.allCases
@@ -256,29 +260,41 @@ struct ContentView: View {
                             title: t(en: "Corner radius", zh: "圆角"),
                             value: $cornerRadiusRatio,
                             range: 0.12...0.34,
-                            valueText: cornerRadiusRatio.formatted(.percent.precision(.fractionLength(0)))
-                        )
+                            valueText: cornerRadiusRatio.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset", zh: "重置")
+                        ) {
+                            cornerRadiusRatio = visualSizePreset.cornerRadiusRatio
+                        }
 
                         SliderSettingRow(
                             title: t(en: "Content padding", zh: "内容边距"),
                             value: $contentPaddingRatio,
                             range: 0.04...0.2,
-                            valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0)))
-                        )
+                            valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset", zh: "重置")
+                        ) {
+                            contentPaddingRatio = visualSizePreset.contentPaddingRatio
+                        }
 
                         SliderSettingRow(
                             title: t(en: "Symbol scale", zh: "符号缩放"),
                             value: $symbolScaleRatio,
                             range: 0.28...0.62,
-                            valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0)))
-                        )
+                            valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset", zh: "重置")
+                        ) {
+                            symbolScaleRatio = visualSizePreset.symbolScaleRatio
+                        }
 
                         SliderSettingRow(
                             title: t(en: "Shadow", zh: "阴影"),
                             value: $shadowStrength,
                             range: 0...0.5,
-                            valueText: shadowStrength.formatted(.percent.precision(.fractionLength(0)))
-                        )
+                            valueText: shadowStrength.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset", zh: "重置")
+                        ) {
+                            shadowStrength = visualSizePreset.shadowStrength
+                        }
                     }
                     .padding(.top, 6)
                 } label: {
@@ -416,8 +432,10 @@ struct ContentView: View {
     }
 
     private func applyVisualSizePreset(_ preset: VisualSizePreset) {
+        cornerRadiusRatio = preset.cornerRadiusRatio
         contentPaddingRatio = preset.contentPaddingRatio
         symbolScaleRatio = preset.symbolScaleRatio
+        shadowStrength = preset.shadowStrength
     }
 
     private func t(en: String, zh: String) -> String {
@@ -519,6 +537,8 @@ private struct SliderSettingRow: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     let valueText: String
+    let resetTitle: String
+    let resetAction: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -528,6 +548,14 @@ private struct SliderSettingRow: View {
                 Text(valueText)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
+
+                Button(action: resetAction) {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                    .help(resetTitle)
+                    .accessibilityLabel(resetTitle)
             }
 
             Slider(value: $value, in: range)
