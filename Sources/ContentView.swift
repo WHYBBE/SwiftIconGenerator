@@ -102,6 +102,7 @@ struct ContentView: View {
         var iconSetName: String
         var exportPlatforms: [IconRenderer.ExportPlatform.RawValue]
         var fluentEmojiAssetPath: String?
+        var fluentEmojiStyle: FluentEmojiStyle?
     }
 
     private struct ColorValue: Codable, Equatable {
@@ -123,6 +124,50 @@ struct ContentView: View {
         }
     }
 
+    private enum FluentEmojiStyle: String, CaseIterable, Codable, Identifiable {
+        case threeD
+        case color
+        case flat
+        case highContrast
+
+        var id: String { rawValue }
+
+        var folderName: String {
+            switch self {
+            case .threeD:
+                return "3D"
+            case .color:
+                return "Color"
+            case .flat:
+                return "Flat"
+            case .highContrast:
+                return "High Contrast"
+            }
+        }
+
+        var fileExtension: String {
+            switch self {
+            case .threeD:
+                return "png"
+            case .color, .flat, .highContrast:
+                return "svg"
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .threeD:
+                return "3D"
+            case .color:
+                return "Color"
+            case .flat:
+                return "Flat"
+            case .highContrast:
+                return "High Contrast"
+            }
+        }
+    }
+
     @State private var symbolName = "sparkles"
     @State private var symbolQuery = ""
     @State private var iconMode: IconMode = .sfSymbol
@@ -140,6 +185,7 @@ struct ContentView: View {
     @State private var shadowStrength = 0.25
     @State private var iconSetName = "AppIcon"
     @State private var fluentEmojiQuery = ""
+    @State private var fluentEmojiStyle: FluentEmojiStyle = .threeD
     @State private var selectedFluentEmojiAssetPath = ""
     @State private var exportPlatforms: Set<IconRenderer.ExportPlatform> = Set(IconRenderer.ExportPlatform.allCases)
     @State private var exportMessage = ""
@@ -179,7 +225,7 @@ struct ContentView: View {
     }
 
     private var fluentEmojiAssets: [FluentEmojiAsset] {
-        scanFluentEmojiAssets(folderPath: fluentEmojiFolderPath)
+        scanFluentEmojiAssets(folderPath: fluentEmojiFolderPath, style: fluentEmojiStyle)
     }
 
     private var filteredFluentEmojiAssets: [FluentEmojiAsset] {
@@ -200,7 +246,9 @@ struct ContentView: View {
     }
 
     private var isFluentEmojiFolderValid: Bool {
-        !fluentEmojiAssets.isEmpty
+        FluentEmojiStyle.allCases.contains { style in
+            !scanFluentEmojiAssets(folderPath: fluentEmojiFolderPath, style: style).isEmpty
+        }
     }
 
     var body: some View {
@@ -486,6 +534,17 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Fluent Emoji")
                 .font(.headline)
+
+            Picker(t(en: "Style", zh: "风格"), selection: $fluentEmojiStyle) {
+                ForEach(FluentEmojiStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .onChange(of: fluentEmojiStyle) { _, _ in
+                selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
+            }
 
             TextField(t(en: "Search Fluent Emoji", zh: "搜索 Fluent Emoji"), text: $fluentEmojiQuery)
                 .textFieldStyle(.roundedBorder)
@@ -858,7 +917,8 @@ struct ContentView: View {
             shadowStrength: shadowStrength,
             iconSetName: iconSetName,
             exportPlatforms: exportPlatforms.map(\.rawValue),
-            fluentEmojiAssetPath: selectedFluentEmojiAssetPath.isEmpty ? nil : selectedFluentEmojiAssetPath
+            fluentEmojiAssetPath: selectedFluentEmojiAssetPath.isEmpty ? nil : selectedFluentEmojiAssetPath,
+            fluentEmojiStyle: fluentEmojiStyle
         )
     }
 
@@ -879,7 +939,8 @@ struct ContentView: View {
             project.shadowStrength != shadowStrength ||
             project.iconSetName != iconSetName ||
             Set(project.exportPlatforms) != Set(exportPlatforms.map(\.rawValue)) ||
-            (project.fluentEmojiAssetPath ?? "") != selectedFluentEmojiAssetPath
+            (project.fluentEmojiAssetPath ?? "") != selectedFluentEmojiAssetPath ||
+            (project.fluentEmojiStyle ?? .threeD) != fluentEmojiStyle
     }
 
     private var projectName: String {
@@ -910,6 +971,7 @@ struct ContentView: View {
         shadowStrength = project.shadowStrength
         iconSetName = project.iconSetName
         exportPlatforms = Set(project.exportPlatforms.compactMap(IconRenderer.ExportPlatform.init(rawValue:)))
+        fluentEmojiStyle = project.fluentEmojiStyle ?? .threeD
         selectedFluentEmojiAssetPath = project.fluentEmojiAssetPath ?? ""
     }
 
@@ -943,6 +1005,7 @@ struct ContentView: View {
         shadowStrength = 0.25
         iconSetName = "AppIcon"
         fluentEmojiQuery = ""
+        fluentEmojiStyle = .threeD
         selectedFluentEmojiAssetPath = ""
         exportMessage = ""
         exportSucceeded = false
@@ -958,7 +1021,7 @@ struct ContentView: View {
         savedProjectsData = json
     }
 
-    private func scanFluentEmojiAssets(folderPath: String) -> [FluentEmojiAsset] {
+    private func scanFluentEmojiAssets(folderPath: String, style: FluentEmojiStyle) -> [FluentEmojiAsset] {
         let trimmedPath = folderPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPath.isEmpty else { return [] }
 
@@ -981,7 +1044,7 @@ struct ContentView: View {
 
         return emojiFolders.compactMap { emojiFolder in
             guard (try? emojiFolder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true,
-                  let imageURL = bestFluentEmojiImageURL(in: emojiFolder) else {
+                  let imageURL = bestFluentEmojiImageURL(in: emojiFolder, style: style) else {
                 return nil
             }
 
@@ -990,7 +1053,7 @@ struct ContentView: View {
         .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
-    private func bestFluentEmojiImageURL(in emojiFolder: URL) -> URL? {
+    private func bestFluentEmojiImageURL(in emojiFolder: URL, style: FluentEmojiStyle) -> URL? {
         let fileManager = FileManager.default
         let resourceKeys: [URLResourceKey] = [.isRegularFileKey]
         guard let enumerator = fileManager.enumerator(
@@ -1003,7 +1066,8 @@ struct ContentView: View {
 
         let pngURLs = enumerator.compactMap { item -> URL? in
             guard let url = item as? URL,
-                  url.pathExtension.localizedCaseInsensitiveCompare("png") == .orderedSame,
+                  url.pathExtension.localizedCaseInsensitiveCompare(style.fileExtension) == .orderedSame,
+                  url.path.lowercased().contains("/\(style.folderName.lowercased())/"),
                   (try? url.resourceValues(forKeys: Set(resourceKeys)).isRegularFile) == true else {
                 return nil
             }
@@ -1012,22 +1076,23 @@ struct ContentView: View {
         }
 
         return pngURLs.sorted { lhs, rhs in
-            fluentEmojiImageRank(lhs) < fluentEmojiImageRank(rhs)
+            fluentEmojiImageRank(lhs, style: style) < fluentEmojiImageRank(rhs, style: style)
         }.first
     }
 
-    private func fluentEmojiImageRank(_ url: URL) -> Int {
+    private func fluentEmojiImageRank(_ url: URL, style: FluentEmojiStyle) -> Int {
         let path = url.path.lowercased()
+        let stylePath = "/\(style.folderName.lowercased())/"
 
-        if path.contains("/3d/") && !path.contains("/default/") && !path.contains("/light/") && !path.contains("/dark/") {
+        if path.contains(stylePath) && !path.contains("/default/") && !path.contains("/light/") && !path.contains("/dark/") {
             return 0
         }
 
-        if path.contains("/default/3d/") {
+        if path.contains("/default") && path.contains(stylePath) {
             return 1
         }
 
-        if path.contains("/3d/") {
+        if path.contains(stylePath) {
             return 2
         }
 
