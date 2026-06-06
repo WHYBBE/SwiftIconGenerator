@@ -548,7 +548,7 @@ struct ContentView: View {
 
             ZStack {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(.regularMaterial)
+                    .fill(Color(nsColor: .controlBackgroundColor))
                     .shadow(color: .black.opacity(0.08), radius: 24, y: 10)
 
                 iconPreview(image: previewImage, size: 196)
@@ -563,7 +563,7 @@ struct ContentView: View {
                 ForEach([32.0, 64.0, 96.0], id: \.self) { size in
                     iconPreview(image: previewImage, size: size)
                         .padding(8)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
 
