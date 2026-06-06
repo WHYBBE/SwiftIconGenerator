@@ -163,10 +163,6 @@ struct ContentView: View {
                 TextField(t(en: "Search symbols", zh: "搜索符号"), text: $symbolQuery)
                     .textFieldStyle(.roundedBorder)
 
-                Text(t(en: "Choose a symbol directly from the list below.", zh: "直接从下方列表中选择一个符号。"))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
                         ForEach(filteredSymbols, id: \.self) { symbol in
@@ -193,10 +189,6 @@ struct ContentView: View {
 
                 Button(t(en: "Open System Emoji Picker", zh: "打开系统表情符号选择器"), action: openEmojiPicker)
                     .buttonStyle(.bordered)
-
-                Text(t(en: "Choose one emoji or paste a custom emoji sequence.", zh: "选择一个表情符号，或粘贴自定义表情序列。"))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
 
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 10)], spacing: 10) {
@@ -291,7 +283,7 @@ struct ContentView: View {
                     TextField(t(en: "Icon set name", zh: "图标集名称"), text: $iconSetName)
                         .textFieldStyle(.roundedBorder)
 
-                    Text(t(en: "Preview", zh: "预览") + ": " + normalizedIconSetName)
+                    Text(normalizedIconSetName)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
@@ -315,9 +307,6 @@ struct ContentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    Text(t(en: "Exports an Xcode-ready .appiconset for iPhone, iPad, App Store, and macOS.", zh: "导出适用于 iPhone、iPad、App Store 和 macOS 的 Xcode .appiconset。"))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
             }
             .padding(24)
@@ -337,15 +326,8 @@ struct ContentView: View {
             iconPreview(size: 196)
                 .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
 
-            VStack(spacing: 10) {
-                Text(previewTitle)
-                    .font(.title3.weight(.semibold))
-
-                Text(t(en: "Live preview of the generated macOS app icon style.", zh: "实时预览生成的 macOS 应用图标样式。"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+            Text(previewTitle)
+                .font(.title3.weight(.semibold))
 
             HStack(spacing: 14) {
                 ForEach([32.0, 64.0, 96.0], id: \.self) { size in
