@@ -7,7 +7,7 @@ struct ContentView: View {
         case emoji
     }
 
-    private enum IconMode: String, CaseIterable, Identifiable {
+    private enum IconMode: String, CaseIterable, Codable, Identifiable {
         case sfSymbol = "SF Symbols"
         case emoji = "Emoji"
 
@@ -23,7 +23,7 @@ struct ContentView: View {
         }
     }
 
-    private enum VisualSizePreset: String, CaseIterable, Identifiable {
+    private enum VisualSizePreset: String, CaseIterable, Codable, Identifiable {
         case compact = "Compact"
         case balanced = "Balanced"
         case bold = "Bold"
@@ -72,6 +72,47 @@ struct ContentView: View {
         .map(\.rawValue)
         .joined(separator: ",")
 
+    private struct SavedProject: Codable, Identifiable {
+        let id: UUID
+        var name: String
+        var updatedAt: Date
+        var symbolName: String
+        var iconMode: IconMode
+        var emoji: String
+        var foregroundColor: ColorValue
+        var useForegroundGradient: Bool
+        var secondaryForegroundColor: ColorValue
+        var backgroundColor: ColorValue
+        var useGradient: Bool
+        var secondaryBackgroundColor: ColorValue
+        var cornerRadiusRatio: Double
+        var visualSizePreset: VisualSizePreset
+        var contentPaddingRatio: Double
+        var symbolScaleRatio: Double
+        var shadowStrength: Double
+        var iconSetName: String
+        var exportPlatforms: [IconRenderer.ExportPlatform.RawValue]
+    }
+
+    private struct ColorValue: Codable {
+        var red: Double
+        var green: Double
+        var blue: Double
+        var alpha: Double
+
+        var color: Color {
+            Color(red: red, green: green, blue: blue, opacity: alpha)
+        }
+
+        init(color: Color) {
+            let nsColor = NSColor(color).usingColorSpace(.deviceRGB) ?? .white
+            red = Double(nsColor.redComponent)
+            green = Double(nsColor.greenComponent)
+            blue = Double(nsColor.blueComponent)
+            alpha = Double(nsColor.alphaComponent)
+        }
+    }
+
     @State private var symbolName = "sparkles"
     @State private var symbolQuery = ""
     @State private var iconMode: IconMode = .sfSymbol
@@ -93,9 +134,12 @@ struct ContentView: View {
     @State private var exportSucceeded = false
     @State private var didActivateWindow = false
     @State private var emojiPickerSelectionToken = 0
+    @State private var projectColumnVisibility: NavigationSplitViewVisibility = .all
+    @State private var selectedProjectID: UUID?
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("exportPlatforms") private var storedExportPlatforms = Self.defaultExportPlatformRawValues
+    @AppStorage("savedProjects") private var savedProjectsData = "[]"
     @FocusState private var focusedField: Field?
 
     private let suggestedEmojis = [
@@ -117,12 +161,11 @@ struct ContentView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            symbolPanel
-            Divider()
-            settingsPanel
-            Divider()
-            previewPanel
+        NavigationSplitView(columnVisibility: $projectColumnVisibility) {
+            projectSidebar
+                .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 300)
+        } detail: {
+            mainWorkspace
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(appTheme.colorScheme)
@@ -152,10 +195,79 @@ struct ContentView: View {
         }
     }
 
+    private var mainWorkspace: some View {
+        GeometryReader { proxy in
+            let unitWidth = max((proxy.size.width - 2) / 3.2, 260)
+
+            HStack(spacing: 0) {
+                symbolPanel
+                    .frame(width: unitWidth)
+                Divider()
+                settingsPanel
+                    .frame(width: unitWidth * 1.2)
+                Divider()
+                previewPanel
+                    .frame(width: unitWidth)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
+        }
+    }
+
+    private var projectSidebar: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            projectSidebarHeader
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(savedProjects) { project in
+                        Button {
+                            apply(project: project)
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: project.iconMode == .sfSymbol ? project.symbolName : "face.smiling")
+                                    .frame(width: 18)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(project.name)
+                                        .lineLimit(1)
+
+                                    Text(project.iconMode.title(language: appLanguage))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer(minLength: 0)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(project.id == selectedProjectID ? Color.accentColor.opacity(0.16) : Color.clear)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(18)
+        .frame(width: 240)
+        .frame(maxHeight: .infinity)
+    }
+
+    private var projectSidebarHeader: some View {
+        HStack {
+            Text(t(en: "Projects", zh: "项目"))
+                .font(.title3.weight(.semibold))
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var symbolPanel: some View {
         sourcePanelContent
             .padding(24)
-            .frame(width: 330)
             .frame(maxHeight: .infinity)
             .background(sourcePanelBackground)
     }
@@ -172,7 +284,7 @@ struct ContentView: View {
     }
 
     private var sourcePanelHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        HStack(spacing: 12) {
             Text(t(en: "Icon Source", zh: "图标来源"))
                 .font(.title2.weight(.semibold))
 
@@ -187,6 +299,7 @@ struct ContentView: View {
             }
         }
         .pickerStyle(.segmented)
+        .labelsHidden()
         .onChange(of: iconMode) { _, newMode in
             focusedField = newMode == .sfSymbol ? .symbolName : .emoji
         }
@@ -213,7 +326,7 @@ struct ContentView: View {
             TextField(t(en: "Search symbols", zh: "搜索符号"), text: $symbolQuery)
                 .textFieldStyle(.roundedBorder)
 
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
                     ForEach(filteredSymbols, id: \.self) { symbol in
                         SymbolPickerCell(
@@ -244,7 +357,7 @@ struct ContentView: View {
             Button(t(en: "Open System Emoji Picker", zh: "打开系统表情符号选择器"), action: openEmojiPicker)
                 .buttonStyle(.bordered)
 
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 10)], spacing: 10) {
                     ForEach(suggestedEmojis, id: \.self) { item in
                         EmojiPickerCell(
@@ -372,8 +485,13 @@ struct ContentView: View {
                             }
                         }
 
-                        Button(t(en: "Export", zh: "导出"), action: exportIconSet)
-                            .buttonStyle(.borderedProminent)
+                        HStack(spacing: 10) {
+                            Button(t(en: "Save Project", zh: "保存项目"), action: saveCurrentProject)
+                                .buttonStyle(.bordered)
+
+                            Button(t(en: "Export", zh: "导出"), action: exportIconSet)
+                                .buttonStyle(.borderedProminent)
+                        }
 
                         if !exportMessage.isEmpty {
                             Label(exportMessage, systemImage: exportSucceeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
@@ -396,7 +514,7 @@ struct ContentView: View {
     private var previewPanel: some View {
         let previewImage = makePreviewImage(size: 196)
 
-        return VStack(spacing: 20) {
+        return VStack(spacing: 14) {
             Text(t(en: "Preview", zh: "预览"))
                 .font(.title2.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -411,12 +529,12 @@ struct ContentView: View {
                 iconPreview(image: previewImage, size: 196)
                     .shadow(color: .black.opacity(0.14), radius: 22, y: 10)
             }
-            .frame(width: 280, height: 280)
+            .frame(width: 260, height: 260)
 
             Text(previewTitle)
                 .font(.title3.weight(.semibold))
 
-            HStack(spacing: 14) {
+            HStack(spacing: 10) {
                 ForEach([32.0, 64.0, 96.0], id: \.self) { size in
                     iconPreview(image: previewImage, size: size)
                         .padding(8)
@@ -506,6 +624,93 @@ struct ContentView: View {
 
     private func t(en: String, zh: String) -> String {
         appLanguage.text(en: en, zh: zh)
+    }
+
+    private var savedProjects: [SavedProject] {
+        guard let data = savedProjectsData.data(using: .utf8),
+              let projects = try? JSONDecoder().decode([SavedProject].self, from: data) else {
+            return []
+        }
+
+        return projects.sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    private func saveCurrentProject() {
+        var projects = savedProjects
+        let project = makeCurrentProject()
+
+        if let selectedProjectID,
+           let index = projects.firstIndex(where: { $0.id == selectedProjectID }) {
+            projects[index] = project
+        } else {
+            projects.insert(project, at: 0)
+            selectedProjectID = project.id
+        }
+
+        persist(projects: projects)
+    }
+
+    private func makeCurrentProject() -> SavedProject {
+        SavedProject(
+            id: selectedProjectID ?? UUID(),
+            name: projectName,
+            updatedAt: Date(),
+            symbolName: symbolName,
+            iconMode: iconMode,
+            emoji: emoji,
+            foregroundColor: ColorValue(color: foregroundColor),
+            useForegroundGradient: useForegroundGradient,
+            secondaryForegroundColor: ColorValue(color: secondaryForegroundColor),
+            backgroundColor: ColorValue(color: backgroundColor),
+            useGradient: useGradient,
+            secondaryBackgroundColor: ColorValue(color: secondaryBackgroundColor),
+            cornerRadiusRatio: cornerRadiusRatio,
+            visualSizePreset: visualSizePreset,
+            contentPaddingRatio: contentPaddingRatio,
+            symbolScaleRatio: symbolScaleRatio,
+            shadowStrength: shadowStrength,
+            iconSetName: iconSetName,
+            exportPlatforms: exportPlatforms.map(\.rawValue)
+        )
+    }
+
+    private var projectName: String {
+        let trimmedIconSetName = iconSetName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !trimmedIconSetName.isEmpty {
+            return trimmedIconSetName.replacingOccurrences(of: ".appiconset", with: "")
+        }
+
+        return previewTitle
+    }
+
+    private func apply(project: SavedProject) {
+        selectedProjectID = project.id
+        symbolName = project.symbolName
+        iconMode = project.iconMode
+        emoji = project.emoji
+        foregroundColor = project.foregroundColor.color
+        useForegroundGradient = project.useForegroundGradient
+        secondaryForegroundColor = project.secondaryForegroundColor.color
+        backgroundColor = project.backgroundColor.color
+        useGradient = project.useGradient
+        secondaryBackgroundColor = project.secondaryBackgroundColor.color
+        cornerRadiusRatio = project.cornerRadiusRatio
+        visualSizePreset = project.visualSizePreset
+        contentPaddingRatio = project.contentPaddingRatio
+        symbolScaleRatio = project.symbolScaleRatio
+        shadowStrength = project.shadowStrength
+        iconSetName = project.iconSetName
+        exportPlatforms = Set(project.exportPlatforms.compactMap(IconRenderer.ExportPlatform.init(rawValue:)))
+    }
+
+    private func persist(projects: [SavedProject]) {
+        guard let data = try? JSONEncoder().encode(projects),
+              let json = String(data: data, encoding: .utf8) else {
+            return
+        }
+
+        savedProjectsData = json
     }
 
     private func exportIconSet() {
