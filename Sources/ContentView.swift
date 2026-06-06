@@ -26,12 +26,6 @@ struct ContentView: View {
         }
     }
 
-    fileprivate struct FluentEmojiAsset: Identifiable, Hashable {
-        var id: String { imageURL.path }
-        let name: String
-        let imageURL: URL
-    }
-
     private enum VisualSizePreset: String, CaseIterable, Codable, Identifiable {
         case compact = "Compact"
         case balanced = "Balanced"
@@ -124,54 +118,6 @@ struct ContentView: View {
         }
     }
 
-    private enum FluentEmojiStyle: String, CaseIterable, Codable, Identifiable {
-        case threeD
-        case color
-        case flat
-        case highContrast
-
-        var id: String { rawValue }
-
-        var folderName: String {
-            switch self {
-            case .threeD:
-                return "3D"
-            case .color:
-                return "Color"
-            case .flat:
-                return "Flat"
-            case .highContrast:
-                return "High Contrast"
-            }
-        }
-
-        var fileExtension: String {
-            switch self {
-            case .threeD:
-                return "png"
-            case .color, .flat, .highContrast:
-                return "svg"
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .threeD:
-                return "3D"
-            case .color:
-                return "Color"
-            case .flat:
-                return "Flat"
-            case .highContrast:
-                return "High Contrast"
-            }
-        }
-
-        var usesForegroundColor: Bool {
-            self == .highContrast
-        }
-    }
-
     @State private var symbolName = "sparkles"
     @State private var symbolQuery = ""
     @State private var iconMode: IconMode = .sfSymbol
@@ -199,11 +145,15 @@ struct ContentView: View {
     @State private var projectColumnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedProjectID: UUID?
     @State private var projectPendingDeletion: SavedProject?
+    @State private var fluentEmojiFolderExists = false
+    @State private var fluentEmojiIndexExists = false
+    @State private var fluentEmojiIndex: FluentEmojiIndex?
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("exportPlatforms") private var storedExportPlatforms = Self.defaultExportPlatformRawValues
     @AppStorage("savedProjects") private var savedProjectsData = "[]"
     @AppStorage("fluentEmojiFolderPath") private var fluentEmojiFolderPath = ""
+    @AppStorage("fluentEmojiIndexVersion") private var fluentEmojiIndexVersion = ""
     @FocusState private var focusedField: Field?
 
     private let suggestedEmojis = [
@@ -229,7 +179,7 @@ struct ContentView: View {
     }
 
     private var fluentEmojiAssets: [FluentEmojiAsset] {
-        scanFluentEmojiAssets(folderPath: fluentEmojiFolderPath, style: fluentEmojiStyle)
+        fluentEmojiIndex?.assets(for: fluentEmojiStyle) ?? []
     }
 
     private var filteredFluentEmojiAssets: [FluentEmojiAsset] {
@@ -250,9 +200,7 @@ struct ContentView: View {
     }
 
     private var isFluentEmojiFolderValid: Bool {
-        FluentEmojiStyle.allCases.contains { style in
-            !scanFluentEmojiAssets(folderPath: fluentEmojiFolderPath, style: style).isEmpty
-        }
+        fluentEmojiFolderExists && fluentEmojiIndexExists
     }
 
     var body: some View {
@@ -282,6 +230,7 @@ struct ContentView: View {
             DispatchQueue.main.async {
                 applyVisualSizePreset(visualSizePreset)
                 loadExportPlatforms()
+                refreshFluentEmojiAvailability()
                 focusedField = .symbolName
             }
         }
@@ -289,12 +238,23 @@ struct ContentView: View {
             saveExportPlatforms(newPlatforms)
         }
         .onChange(of: fluentEmojiFolderPath) { _, _ in
+            fluentEmojiIndex = nil
+            refreshFluentEmojiAvailability()
+
             if !isFluentEmojiFolderValid, iconMode == .fluentEmoji {
                 iconMode = .sfSymbol
             }
 
             if selectedFluentEmojiAsset == nil {
                 selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
+            }
+        }
+        .onChange(of: fluentEmojiIndexVersion) { _, _ in
+            fluentEmojiIndex = nil
+            refreshFluentEmojiAvailability()
+            if iconMode == .fluentEmoji {
+                loadFluentEmojiIndexIfNeeded()
+                selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
             }
         }
         .alert(
@@ -457,6 +417,7 @@ struct ContentView: View {
                 focusedField = .emoji
             case .fluentEmoji:
                 focusedField = nil
+                loadFluentEmojiIndexIfNeeded()
                 selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
             }
         }
@@ -547,6 +508,7 @@ struct ContentView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .onChange(of: fluentEmojiStyle) { _, _ in
+                loadFluentEmojiIndexIfNeeded()
                 selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
             }
 
@@ -854,6 +816,17 @@ struct ContentView: View {
         appLanguage.text(en: en, zh: zh)
     }
 
+    private func refreshFluentEmojiAvailability() {
+        fluentEmojiFolderExists = FluentEmojiIndex.folderExists(at: fluentEmojiFolderPath)
+        fluentEmojiIndexExists = FluentEmojiIndex.indexExists(for: fluentEmojiFolderPath)
+    }
+
+    private func loadFluentEmojiIndexIfNeeded() {
+        guard fluentEmojiIndex == nil, isFluentEmojiFolderValid else { return }
+        fluentEmojiIndex = FluentEmojiIndex.load(folderPath: fluentEmojiFolderPath)
+        fluentEmojiIndexExists = fluentEmojiIndex != nil
+    }
+
     private var savedProjects: [SavedProject] {
         guard let data = savedProjectsData.data(using: .utf8),
               let projects = try? JSONDecoder().decode([SavedProject].self, from: data) else {
@@ -977,6 +950,9 @@ struct ContentView: View {
         iconSetName = project.iconSetName
         exportPlatforms = Set(project.exportPlatforms.compactMap(IconRenderer.ExportPlatform.init(rawValue:)))
         fluentEmojiStyle = project.fluentEmojiStyle ?? .threeD
+        if iconMode == .fluentEmoji {
+            loadFluentEmojiIndexIfNeeded()
+        }
         selectedFluentEmojiAssetPath = project.fluentEmojiAssetPath ?? ""
     }
 
@@ -1024,84 +1000,6 @@ struct ContentView: View {
         }
 
         savedProjectsData = json
-    }
-
-    private func scanFluentEmojiAssets(folderPath: String, style: FluentEmojiStyle) -> [FluentEmojiAsset] {
-        let trimmedPath = folderPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedPath.isEmpty else { return [] }
-
-        let fileManager = FileManager.default
-        let rootURL = URL(fileURLWithPath: trimmedPath, isDirectory: true)
-        let assetsURL = rootURL.appendingPathComponent("assets", isDirectory: true)
-        var isDirectory: ObjCBool = false
-
-        guard fileManager.fileExists(atPath: assetsURL.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            return []
-        }
-
-        guard let emojiFolders = try? fileManager.contentsOfDirectory(
-            at: assetsURL,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return []
-        }
-
-        return emojiFolders.compactMap { emojiFolder in
-            guard (try? emojiFolder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true,
-                  let imageURL = bestFluentEmojiImageURL(in: emojiFolder, style: style) else {
-                return nil
-            }
-
-            return FluentEmojiAsset(name: emojiFolder.lastPathComponent, imageURL: imageURL)
-        }
-        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private func bestFluentEmojiImageURL(in emojiFolder: URL, style: FluentEmojiStyle) -> URL? {
-        let fileManager = FileManager.default
-        let resourceKeys: [URLResourceKey] = [.isRegularFileKey]
-        guard let enumerator = fileManager.enumerator(
-            at: emojiFolder,
-            includingPropertiesForKeys: resourceKeys,
-            options: [.skipsHiddenFiles]
-        ) else {
-            return nil
-        }
-
-        let pngURLs = enumerator.compactMap { item -> URL? in
-            guard let url = item as? URL,
-                  url.pathExtension.localizedCaseInsensitiveCompare(style.fileExtension) == .orderedSame,
-                  url.path.lowercased().contains("/\(style.folderName.lowercased())/"),
-                  (try? url.resourceValues(forKeys: Set(resourceKeys)).isRegularFile) == true else {
-                return nil
-            }
-
-            return url
-        }
-
-        return pngURLs.sorted { lhs, rhs in
-            fluentEmojiImageRank(lhs, style: style) < fluentEmojiImageRank(rhs, style: style)
-        }.first
-    }
-
-    private func fluentEmojiImageRank(_ url: URL, style: FluentEmojiStyle) -> Int {
-        let path = url.path.lowercased()
-        let stylePath = "/\(style.folderName.lowercased())/"
-
-        if path.contains(stylePath) && !path.contains("/default/") && !path.contains("/light/") && !path.contains("/dark/") {
-            return 0
-        }
-
-        if path.contains("/default") && path.contains(stylePath) {
-            return 1
-        }
-
-        if path.contains(stylePath) {
-            return 2
-        }
-
-        return 3
     }
 
     private func exportIconSet() {
@@ -1317,7 +1215,7 @@ private struct EmojiPickerCell: View {
 }
 
 private struct FluentEmojiPickerCell: View {
-    let asset: ContentView.FluentEmojiAsset
+    let asset: FluentEmojiAsset
     let isTemplate: Bool
     let isSelected: Bool
     let action: () -> Void

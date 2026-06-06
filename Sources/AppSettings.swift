@@ -108,6 +108,7 @@ struct AppSettingsView: View {
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("fluentEmojiFolderPath") private var fluentEmojiFolderPath = ""
+    @AppStorage("fluentEmojiIndexVersion") private var fluentEmojiIndexVersion = ""
     @State private var detectionState: DetectionState = .idle
 
     var body: some View {
@@ -147,6 +148,10 @@ struct AppSettingsView: View {
         .frame(width: 420)
         .padding(20)
         .preferredColorScheme(appTheme.colorScheme)
+        .onChange(of: fluentEmojiFolderPath) { _, _ in
+            fluentEmojiIndexVersion = ""
+            detectionState = .idle
+        }
     }
 
     private func t(en: String, zh: String) -> String {
@@ -167,60 +172,19 @@ struct AppSettingsView: View {
         }
 
         fluentEmojiFolderPath = folderURL.path
+        fluentEmojiIndexVersion = ""
         detectionState = .idle
     }
 
     private func detectFluentEmojiFolder() {
-        let count = fluentEmojiAssetCount(folderPath: fluentEmojiFolderPath)
-        detectionState = count > 0 ? .valid(count) : .invalid
-    }
-
-    private func fluentEmojiAssetCount(folderPath: String) -> Int {
-        let trimmedPath = folderPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedPath.isEmpty else { return 0 }
-
-        let fileManager = FileManager.default
-        let assetsURL = URL(fileURLWithPath: trimmedPath, isDirectory: true)
-            .appendingPathComponent("assets", isDirectory: true)
-        var isDirectory: ObjCBool = false
-
-        guard fileManager.fileExists(atPath: assetsURL.path, isDirectory: &isDirectory), isDirectory.boolValue,
-              let emojiFolders = try? fileManager.contentsOfDirectory(
-                at: assetsURL,
-                includingPropertiesForKeys: [.isDirectoryKey],
-                options: [.skipsHiddenFiles]
-              ) else {
-            return 0
+        guard let index = FluentEmojiIndex.build(folderPath: fluentEmojiFolderPath),
+              (try? index.save()) != nil else {
+            fluentEmojiIndexVersion = ""
+            detectionState = .invalid
+            return
         }
 
-        return emojiFolders.reduce(0) { count, emojiFolder in
-            guard (try? emojiFolder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true,
-                  hasFluentEmojiPNG(in: emojiFolder) else {
-                return count
-            }
-
-            return count + 1
-        }
-    }
-
-    private func hasFluentEmojiPNG(in emojiFolder: URL) -> Bool {
-        guard let enumerator = FileManager.default.enumerator(
-            at: emojiFolder,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return false
-        }
-
-        return enumerator.contains { item in
-            guard let url = item as? URL,
-                  url.pathExtension.localizedCaseInsensitiveCompare("png") == .orderedSame,
-                  url.path.lowercased().contains("/3d/"),
-                  (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else {
-                return false
-            }
-
-            return true
-        }
+        fluentEmojiIndexVersion = UUID().uuidString
+        detectionState = .valid(index.assetCount)
     }
 }
