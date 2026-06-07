@@ -80,6 +80,12 @@ struct FluentEmojiIndex: Codable {
         try? FileManager.default.removeItem(at: fileURL)
     }
 
+    static func removeAllIndexes() {
+        let directoryURL = indexDirectoryURL()
+        guard FileManager.default.fileExists(atPath: directoryURL.path) else { return }
+        try? FileManager.default.removeItem(at: directoryURL)
+    }
+
     static func load(folderPath: String) -> FluentEmojiIndex? {
         let trimmedPath = folderPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPath.isEmpty,
@@ -160,11 +166,15 @@ struct FluentEmojiIndex: Codable {
     }
 
     private static func indexFileURL(for folderPath: String) -> URL {
+        indexDirectoryURL()
+            .appendingPathComponent("\(stableHash(folderPath)).json")
+    }
+
+    private static func indexDirectoryURL() -> URL {
         let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return appSupportURL
             .appendingPathComponent("SwiftIconGenerator", isDirectory: true)
             .appendingPathComponent("FluentEmojiIndexes", isDirectory: true)
-            .appendingPathComponent("\(stableHash(folderPath)).json")
     }
 
     private static func stableHash(_ value: String) -> String {

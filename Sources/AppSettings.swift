@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 enum AppTheme: String, CaseIterable, Identifiable {
     case system
@@ -66,6 +67,18 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 struct AppSettingsView: View {
+    private struct AppDataExport: Codable {
+        let version: Int
+        let appTheme: String
+        let appLanguage: String
+        let exportPlatforms: String
+        let savedProjects: String
+        let fluentEmojiFolderPath: String
+        let fluentEmojiIndexVersion: String
+        let fluentEmojiIndexedFolderPath: String
+        let fluentEmojiIndexedAssetCount: Int
+    }
+
     private enum DetectionState {
         case idle
         case valid(Int)
@@ -107,12 +120,17 @@ struct AppSettingsView: View {
 
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
+    @AppStorage("exportPlatforms") private var storedExportPlatforms = ""
+    @AppStorage("savedProjects") private var savedProjectsData = "[]"
     @AppStorage("fluentEmojiFolderPath") private var fluentEmojiFolderPath = ""
     @AppStorage("fluentEmojiIndexVersion") private var fluentEmojiIndexVersion = ""
     @AppStorage("fluentEmojiIndexedFolderPath") private var fluentEmojiIndexedFolderPath = ""
     @AppStorage("fluentEmojiIndexedAssetCount") private var fluentEmojiIndexedAssetCount = 0
     @State private var indexingFailed = false
     @State private var settingsWindow: NSWindow?
+    @State private var dataMessage = ""
+    @State private var dataMessageIsError = false
+    @State private var clearAllConfirmationPresented = false
 
     private var detectionState: DetectionState {
         let trimmedPath = fluentEmojiFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -165,6 +183,29 @@ struct AppSettingsView: View {
                         .foregroundStyle(detectionState.color)
                 }
             }
+
+            Section(t(en: "Data", zh: "数据")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Button(t(en: "Import Data", zh: "导入数据"), action: importData)
+
+                        Button(t(en: "Export Data", zh: "导出数据"), action: exportData)
+
+                        Button(t(en: "Clear All Data", zh: "清除所有数据"), role: .destructive) {
+                            clearAllConfirmationPresented = true
+                        }
+
+                        Spacer()
+                    }
+
+                    if !dataMessage.isEmpty {
+                        Label(dataMessage, systemImage: dataMessageIsError ? "xmark.circle" : "checkmark.circle")
+                            .font(.footnote)
+                            .foregroundStyle(dataMessageIsError ? .red : .secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
         .frame(width: 420)
@@ -176,6 +217,12 @@ struct AppSettingsView: View {
         .onChange(of: fluentEmojiFolderPath) { _, _ in
             fluentEmojiIndexVersion = ""
             indexingFailed = false
+        }
+        .alert(t(en: "Clear All Data", zh: "清除所有数据"), isPresented: $clearAllConfirmationPresented) {
+            Button(t(en: "Cancel", zh: "取消"), role: .cancel) {}
+            Button(t(en: "Clear", zh: "清除"), role: .destructive, action: clearAllData)
+        } message: {
+            Text(t(en: "This will remove all projects, settings, Fluent Emoji paths, and index state. This cannot be undone.", zh: "这会删除所有项目、设置、Fluent Emoji 路径和索引状态。此操作无法撤销。"))
         }
     }
 
@@ -236,6 +283,141 @@ struct AppSettingsView: View {
         fluentEmojiIndexedFolderPath = ""
         fluentEmojiIndexedAssetCount = 0
         indexingFailed = false
+    }
+
+    private func exportData() {
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "SwiftIconGeneratorData.json"
+        panel.prompt = t(en: "Export", zh: "导出")
+
+        beginSavePanel(panel) { response, url in
+            guard response == .OK, let url else { return }
+
+            let dataExport = AppDataExport(
+                version: 1,
+                appTheme: appTheme.rawValue,
+                appLanguage: appLanguage.rawValue,
+                exportPlatforms: storedExportPlatforms,
+                savedProjects: savedProjectsData,
+                fluentEmojiFolderPath: fluentEmojiFolderPath,
+                fluentEmojiIndexVersion: fluentEmojiIndexVersion,
+                fluentEmojiIndexedFolderPath: fluentEmojiIndexedFolderPath,
+                fluentEmojiIndexedAssetCount: fluentEmojiIndexedAssetCount
+            )
+
+            do {
+                let data = try JSONEncoder().encode(dataExport)
+                try data.write(to: url, options: .atomic)
+                showDataMessage(t(en: "Exported data", zh: "已导出数据"), isError: false)
+            } catch {
+                showDataMessage(error.localizedDescription, isError: true)
+            }
+        }
+    }
+
+    private func importData() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.json]
+        panel.prompt = t(en: "Import", zh: "导入")
+
+        beginOpenPanel(panel) { response, url in
+            guard response == .OK, let url else { return }
+
+            do {
+                let data = try Data(contentsOf: url)
+                if let dataExport = try? JSONDecoder().decode(AppDataExport.self, from: data) {
+                    apply(dataExport: dataExport)
+                    showDataMessage(t(en: "Imported data", zh: "已导入数据"), isError: false)
+                    return
+                }
+
+                try importSingleProject(data: data)
+                showDataMessage(t(en: "Imported project", zh: "已导入项目"), isError: false)
+            } catch {
+                showDataMessage(error.localizedDescription, isError: true)
+            }
+        }
+    }
+
+    private func apply(dataExport: AppDataExport) {
+        appTheme = AppTheme(rawValue: dataExport.appTheme) ?? .system
+        appLanguage = AppLanguage(rawValue: dataExport.appLanguage) ?? .system
+        storedExportPlatforms = dataExport.exportPlatforms
+        savedProjectsData = dataExport.savedProjects
+        fluentEmojiFolderPath = dataExport.fluentEmojiFolderPath
+        fluentEmojiIndexVersion = dataExport.fluentEmojiIndexVersion
+        fluentEmojiIndexedFolderPath = dataExport.fluentEmojiIndexedFolderPath
+        fluentEmojiIndexedAssetCount = dataExport.fluentEmojiIndexedAssetCount
+        indexingFailed = false
+    }
+
+    private func importSingleProject(data: Data) throws {
+        let object = try JSONSerialization.jsonObject(with: data)
+        guard var project = object as? [String: Any],
+              let id = project["id"] as? String,
+              project["name"] is String else {
+            throw NSError(domain: "SwiftIconGenerator", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: t(en: "The file is not a supported data or project export.", zh: "文件不是支持的数据或项目导出。")
+            ])
+        }
+
+        var projects = (try? JSONSerialization.jsonObject(with: Data(savedProjectsData.utf8))) as? [[String: Any]] ?? []
+        project["updatedAt"] = project["updatedAt"] ?? ISO8601DateFormatter().string(from: Date())
+
+        if let index = projects.firstIndex(where: { $0["id"] as? String == id }) {
+            projects[index] = project
+        } else {
+            projects.insert(project, at: 0)
+        }
+
+        let data = try JSONSerialization.data(withJSONObject: projects, options: [])
+        savedProjectsData = String(data: data, encoding: .utf8) ?? "[]"
+    }
+
+    private func clearAllData() {
+        FluentEmojiIndex.removeAllIndexes()
+        appTheme = .system
+        appLanguage = .system
+        storedExportPlatforms = IconRenderer.ExportPlatform.allCases.map(\.rawValue).joined(separator: ",")
+        savedProjectsData = "[]"
+        fluentEmojiFolderPath = ""
+        fluentEmojiIndexVersion = ""
+        fluentEmojiIndexedFolderPath = ""
+        fluentEmojiIndexedAssetCount = 0
+        indexingFailed = false
+        showDataMessage(t(en: "Cleared all data", zh: "已清除所有数据"), isError: false)
+    }
+
+    private func beginSavePanel(_ panel: NSSavePanel, completion: @escaping (NSApplication.ModalResponse, URL?) -> Void) {
+        guard let settingsWindow else {
+            completion(panel.runModal(), panel.url)
+            return
+        }
+
+        panel.beginSheetModal(for: settingsWindow) { response in
+            completion(response, panel.url)
+        }
+    }
+
+    private func beginOpenPanel(_ panel: NSOpenPanel, completion: @escaping (NSApplication.ModalResponse, URL?) -> Void) {
+        guard let settingsWindow else {
+            completion(panel.runModal(), panel.url)
+            return
+        }
+
+        panel.beginSheetModal(for: settingsWindow) { response in
+            completion(response, panel.url)
+        }
+    }
+
+    private func showDataMessage(_ message: String, isError: Bool) {
+        dataMessage = message
+        dataMessageIsError = isError
     }
 }
 

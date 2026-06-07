@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     private enum Field: Hashable {
@@ -358,6 +359,15 @@ struct ContentView: View {
                                 }
 
                                 Spacer(minLength: 0)
+
+                                Button {
+                                    export(project: project)
+                                } label: {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                                .help(t(en: "Export project", zh: "导出项目"))
 
                                 Button {
                                     projectPendingDeletion = project
@@ -1102,6 +1112,24 @@ struct ContentView: View {
         persist(projects: projects)
         projectPendingDeletion = nil
         resetEditor()
+    }
+
+    private func export(project: SavedProject) {
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "\(project.name).json"
+        panel.prompt = t(en: "Export", zh: "导出")
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            let data = try JSONEncoder().encode(project)
+            try data.write(to: url, options: .atomic)
+        } catch {
+            exportSucceeded = false
+            exportMessage = error.localizedDescription
+        }
     }
 
     private func resetEditor() {
