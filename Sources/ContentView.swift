@@ -1253,7 +1253,7 @@ private struct FluentEmojiPickerCell: View {
                     .renderingMode(isTemplate ? .template : .original)
                     .interpolation(.high)
                     .scaledToFit()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(isTemplate ? (isSelected ? Color.white : Color.primary) : Color.primary)
                     .frame(width: 44, height: 44)
 
                 Text(asset.name)
