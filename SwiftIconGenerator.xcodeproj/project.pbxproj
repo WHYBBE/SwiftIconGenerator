@@ -11,6 +11,8 @@
 		A000000B2C3D4E5F00000011 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000021 /* ContentView.swift */; };
 		A000000B2C3D4E5F00000012 /* IconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000022 /* IconRenderer.swift */; };
 		A000000B2C3D4E5F00000013 /* SFSymbolCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000023 /* SFSymbolCatalog.swift */; };
+		A000000B2C3D4E5F00000017 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000027 /* AppSettings.swift */; };
+		A000000B2C3D4E5F00000018 /* FluentEmojiIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000028 /* FluentEmojiIndex.swift */; };
 		A000000B2C3D4E5F00000014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000024 /* Assets.xcassets */; };
 		A000000B2C3D4E5F00000015 /* AppIcon.appiconset in Resources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000025 /* AppIcon.appiconset */; };
 		A000000B2C3D4E5F00000016 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A000000B2C3D4E5F00000026 /* Info.plist */; };
@@ -22,6 +24,8 @@
 		A000000B2C3D4E5F00000021 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ContentView.swift; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000022 /* IconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/IconRenderer.swift; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000023 /* SFSymbolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/SFSymbolCatalog.swift; sourceTree = SOURCE_ROOT; };
+		A000000B2C3D4E5F00000027 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/AppSettings.swift; sourceTree = SOURCE_ROOT; };
+		A000000B2C3D4E5F00000028 /* FluentEmojiIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/FluentEmojiIndex.swift; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000024 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SwiftIconGenerator/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000025 /* AppIcon.appiconset */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SwiftIconGenerator/Assets.xcassets/AppIcon.appiconset; sourceTree = SOURCE_ROOT; };
 		A000000B2C3D4E5F00000026 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = SwiftIconGenerator/Info.plist; sourceTree = SOURCE_ROOT; };
@@ -51,7 +55,9 @@
 			isa = PBXGroup;
 			children = (
 				A000000B2C3D4E5F00000020 /* SwiftIconGeneratorApp.swift */,
+				A000000B2C3D4E5F00000027 /* AppSettings.swift */,
 				A000000B2C3D4E5F00000021 /* ContentView.swift */,
+				A000000B2C3D4E5F00000028 /* FluentEmojiIndex.swift */,
 				A000000B2C3D4E5F00000022 /* IconRenderer.swift */,
 				A000000B2C3D4E5F00000023 /* SFSymbolCatalog.swift */,
 			);
@@ -145,7 +151,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A000000B2C3D4E5F00000010 /* SwiftIconGeneratorApp.swift in Sources */,
+				A000000B2C3D4E5F00000017 /* AppSettings.swift in Sources */,
 				A000000B2C3D4E5F00000011 /* ContentView.swift in Sources */,
+				A000000B2C3D4E5F00000018 /* FluentEmojiIndex.swift in Sources */,
 				A000000B2C3D4E5F00000012 /* IconRenderer.swift in Sources */,
 				A000000B2C3D4E5F00000013 /* SFSymbolCatalog.swift in Sources */,
 			);

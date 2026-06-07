@@ -206,6 +206,25 @@ struct AppSettingsView: View {
                     }
                 }
             }
+
+            Section(t(en: "About", zh: "关于")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(t(en: "Version", zh: "版本"))
+                        Spacer()
+                        Text(AppAbout.versionText)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Link(destination: AppAbout.repositoryURL) {
+                        Label(AppAbout.repositoryName, systemImage: "link")
+                    }
+
+                    Link(destination: AppAbout.licenseURL) {
+                        Label(AppAbout.licenseName, systemImage: "doc.text")
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
         .frame(width: 420)
@@ -418,6 +437,44 @@ struct AppSettingsView: View {
     private func showDataMessage(_ message: String, isError: Bool) {
         dataMessage = message
         dataMessageIsError = isError
+    }
+}
+
+@MainActor
+private final class AppSettingsWindowController {
+    static let shared = AppSettingsWindowController()
+
+    private var window: NSWindow?
+
+    func show() {
+        if let window {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 460, height: 500),
+            styleMask: [.titled, .closable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Settings"
+        window.contentView = NSHostingView(rootView: AppSettingsView())
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        self.window = window
+    }
+}
+
+extension AppDelegate {
+    @objc func showSettingsWindow(_ sender: Any?) {
+        Task { @MainActor in
+            AppSettingsWindowController.shared.show()
+        }
     }
 }
 

@@ -293,7 +293,7 @@ struct IconRenderer {
         let distance = size * 0.025
         let radians = shadowAngle * .pi / 180
         shadow.shadowColor = NSColor.black.withAlphaComponent(shadowStrength * 0.7)
-        shadow.shadowOffset = NSSize(width: cos(radians) * distance, height: sin(radians) * distance)
+        shadow.shadowOffset = NSSize(width: CGFloat(Darwin.cos(radians)) * distance, height: CGFloat(Darwin.sin(radians)) * distance)
         shadow.shadowBlurRadius = size * 0.06
         shadow.set()
     }
@@ -394,7 +394,7 @@ struct IconRenderer {
 
     private func gradientProgress(at point: NSPoint, in rect: NSRect) -> CGFloat {
         let radians = foregroundGradientAngle * .pi / 180
-        let direction = CGPoint(x: cos(radians), y: sin(radians))
+        let direction = CGPoint(x: CGFloat(Darwin.cos(radians)), y: CGFloat(Darwin.sin(radians)))
         let corners = [
             CGPoint(x: rect.minX, y: rect.minY),
             CGPoint(x: rect.maxX, y: rect.minY),
