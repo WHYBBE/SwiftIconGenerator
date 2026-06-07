@@ -153,6 +153,8 @@ struct ContentView: View {
     @State private var fluentEmojiFolderExists = false
     @State private var fluentEmojiIndexExists = false
     @State private var fluentEmojiIndex: FluentEmojiIndex?
+    @State private var sfSymbolsMessage = ""
+    @State private var sfSymbolsMessageIsError = false
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("exportPlatforms") private var storedExportPlatforms = Self.defaultExportPlatformRawValues
@@ -465,6 +467,20 @@ struct ContentView: View {
 
             TextField(t(en: "Search symbols", zh: "搜索符号"), text: $symbolQuery)
                 .textFieldStyle(.roundedBorder)
+
+            HStack(spacing: 8) {
+                Button(t(en: "Open SF Symbols", zh: "打开 SF Symbols"), action: openSFSymbolsApp)
+                    .buttonStyle(.bordered)
+
+                if !sfSymbolsMessage.isEmpty {
+                    Label(sfSymbolsMessage, systemImage: sfSymbolsMessageIsError ? "xmark.circle" : "checkmark.circle")
+                        .font(.footnote)
+                        .foregroundStyle(sfSymbolsMessageIsError ? .red : .secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
 
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
@@ -901,6 +917,38 @@ struct ContentView: View {
         guard fluentEmojiIndex == nil, isFluentEmojiFolderValid else { return }
         fluentEmojiIndex = FluentEmojiIndex.load(folderPath: fluentEmojiFolderPath)
         fluentEmojiIndexExists = fluentEmojiIndex != nil
+    }
+
+    private func openSFSymbolsApp() {
+        let workspace = NSWorkspace.shared
+        let fallbackURL = URL(fileURLWithPath: "/Applications/SF Symbols.app", isDirectory: true)
+        let appURL = workspace.urlForApplication(withBundleIdentifier: "com.apple.SFSymbols")
+            ?? (FileManager.default.fileExists(atPath: fallbackURL.path) ? fallbackURL : nil)
+
+        guard let appURL else {
+            sfSymbolsMessage = t(en: "SF Symbols app not found", zh: "未找到 SF Symbols 应用")
+            sfSymbolsMessageIsError = true
+            return
+        }
+
+        workspace.openApplication(at: appURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            DispatchQueue.main.async {
+                if let error {
+                    sfSymbolsMessage = error.localizedDescription
+                    sfSymbolsMessageIsError = true
+                } else {
+                    let openedMessage = t(en: "Opened", zh: "已打开")
+                    sfSymbolsMessage = openedMessage
+                    sfSymbolsMessageIsError = false
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        if sfSymbolsMessage == openedMessage, !sfSymbolsMessageIsError {
+                            sfSymbolsMessage = ""
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private func fluentEmojiInitial(for name: String) -> String {
