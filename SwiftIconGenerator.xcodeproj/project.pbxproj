@@ -178,7 +178,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = tom.dev.SwiftIconGenerator;
+				PRODUCT_BUNDLE_IDENTIFIER = me.whynbnb.SwiftIconGenerator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -204,7 +204,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = tom.dev.SwiftIconGenerator;
+				PRODUCT_BUNDLE_IDENTIFIER = me.whynbnb.SwiftIconGenerator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
