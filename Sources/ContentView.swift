@@ -164,6 +164,7 @@ struct ContentView: View {
     @AppStorage("savedProjects") private var savedProjectsData = "[]"
     @AppStorage("fluentEmojiFolderPath") private var fluentEmojiFolderPath = ""
     @AppStorage("fluentEmojiIndexVersion") private var fluentEmojiIndexVersion = ""
+    @AppStorage("showPreviewBackdrop") private var showPreviewBackdrop = true
     @FocusState private var focusedField: Field?
 
     private let suggestedEmojis = [
@@ -745,16 +746,6 @@ struct ContentView: View {
             }
             .padding(panelPadding)
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color(nsColor: .underPageBackgroundColor),
-                        Color(nsColor: .windowBackgroundColor)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
         }
     }
 
@@ -786,7 +777,7 @@ struct ContentView: View {
         return VStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .fill(previewBackdropStyle)
                     .shadow(color: .black.opacity(0.08), radius: 24, y: 10)
 
                 iconPreview(image: previewImage, size: iconSize)
@@ -804,11 +795,28 @@ struct ContentView: View {
                 ForEach(smallSizes, id: \.self) { size in
                     iconPreview(image: previewImage, size: size)
                         .padding(8)
-                        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(previewBackdropStyle, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var previewBackdropStyle: AnyShapeStyle {
+        if showPreviewBackdrop {
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        Color(nsColor: .underPageBackgroundColor),
+                        Color(nsColor: .windowBackgroundColor)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        }
+
+        return AnyShapeStyle(Color(nsColor: .controlBackgroundColor))
     }
 
     private var exportPanel: some View {

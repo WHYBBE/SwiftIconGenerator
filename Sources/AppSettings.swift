@@ -126,6 +126,7 @@ struct AppSettingsView: View {
     @AppStorage("fluentEmojiIndexVersion") private var fluentEmojiIndexVersion = ""
     @AppStorage("fluentEmojiIndexedFolderPath") private var fluentEmojiIndexedFolderPath = ""
     @AppStorage("fluentEmojiIndexedAssetCount") private var fluentEmojiIndexedAssetCount = 0
+    @AppStorage("showPreviewBackdrop") private var showPreviewBackdrop = true
     @State private var indexingFailed = false
     @State private var settingsWindow: NSWindow?
     @State private var dataMessage = ""
@@ -161,6 +162,10 @@ struct AppSettingsView: View {
                 ForEach(AppLanguage.allCases) { language in
                     Text(language.title(language: appLanguage)).tag(language)
                 }
+            }
+
+            Section(t(en: "Preview", zh: "预览")) {
+                Toggle(t(en: "Show contrast background", zh: "显示对比背景"), isOn: $showPreviewBackdrop)
             }
 
             Section(t(en: "Icon Sources", zh: "图标来源")) {
