@@ -242,18 +242,11 @@ struct ContentView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(appTheme.colorScheme)
         .background(WindowAccessor { window in
-            guard let window, !didActivateWindow else { return }
+            guard let window, !didActivateWindow, Self.isRunningFromSwiftPM else { return }
 
             didActivateWindow = true
 
-            DispatchQueue.main.async {
-                NSApp.activate(ignoringOtherApps: true)
-                window.collectionBehavior.insert(.fullScreenPrimary)
-                window.makeKeyAndOrderFront(nil)
-                window.orderFrontRegardless()
-                focusedField = .symbolName
-                window.makeFirstResponder(nil)
-            }
+            focusSwiftPMWindow(window)
         })
         .onAppear {
             DispatchQueue.main.async {
@@ -916,6 +909,24 @@ struct ContentView: View {
 
     private func t(en: String, zh: String) -> String {
         appLanguage.text(en: en, zh: zh)
+    }
+
+    private static var isRunningFromSwiftPM: Bool {
+        Bundle.main.bundleURL.pathExtension != "app"
+    }
+
+    private func focusSwiftPMWindow(_ window: NSWindow) {
+        window.collectionBehavior.insert(.fullScreenPrimary)
+
+        for delay in [0.0, 0.15, 0.45] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                NSApp.activate(ignoringOtherApps: true)
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+                focusedField = .symbolName
+                window.makeFirstResponder(nil)
+            }
+        }
     }
 
     private func refreshFluentEmojiAvailability() {
