@@ -86,14 +86,17 @@ struct ContentView: View {
         var foregroundColor: ColorValue
         var useForegroundGradient: Bool
         var secondaryForegroundColor: ColorValue
+        var foregroundGradientAngle: Double?
         var backgroundColor: ColorValue
         var useGradient: Bool
         var secondaryBackgroundColor: ColorValue
+        var backgroundGradientAngle: Double?
         var cornerRadiusRatio: Double
         var visualSizePreset: VisualSizePreset
         var contentPaddingRatio: Double
         var symbolScaleRatio: Double
         var shadowStrength: Double
+        var shadowAngle: Double?
         var iconSetName: String
         var exportPlatforms: [IconRenderer.ExportPlatform.RawValue]
         var fluentEmojiAssetPath: String?
@@ -131,14 +134,17 @@ struct ContentView: View {
     @State private var foregroundColor = Color.white
     @State private var useForegroundGradient = false
     @State private var secondaryForegroundColor = Color(red: 1.0, green: 0.86, blue: 0.25)
+    @State private var foregroundGradientAngle = 45.0
     @State private var backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
     @State private var useGradient = true
     @State private var secondaryBackgroundColor = Color(red: 0.39, green: 0.20, blue: 0.98)
+    @State private var backgroundGradientAngle = -45.0
     @State private var cornerRadiusRatio = 0.24
     @State private var visualSizePreset: VisualSizePreset = .balanced
     @State private var contentPaddingRatio = 0.10
     @State private var symbolScaleRatio = 0.44
     @State private var shadowStrength = 0.25
+    @State private var shadowAngle = 270.0
     @State private var iconSetName = "AppIcon"
     @State private var fluentEmojiQuery = ""
     @State private var fluentEmojiStyle: FluentEmojiStyle = .threeD
@@ -627,6 +633,14 @@ struct ContentView: View {
                             endColor: $secondaryForegroundColor,
                             usesGradient: $useForegroundGradient
                         )
+
+                        if useForegroundGradient {
+                            angleSettingRow(
+                                title: t(en: "Foreground angle", zh: "前景角度"),
+                                value: $foregroundGradientAngle,
+                                resetValue: 45
+                            )
+                        }
                     }
 
                     GradientColorSection(
@@ -638,6 +652,14 @@ struct ContentView: View {
                         endColor: $secondaryBackgroundColor,
                         usesGradient: $useGradient
                     )
+
+                    if useGradient {
+                        angleSettingRow(
+                            title: t(en: "Background angle", zh: "背景角度"),
+                            value: $backgroundGradientAngle,
+                            resetValue: -45
+                        )
+                    }
 
                     SliderSettingRow(
                         title: t(en: "Corner radius", zh: "圆角"),
@@ -677,6 +699,14 @@ struct ContentView: View {
                         resetTitle: t(en: "Reset", zh: "重置")
                     ) {
                         shadowStrength = visualSizePreset.shadowStrength
+                    }
+
+                    if shadowStrength > 0 {
+                        angleSettingRow(
+                            title: t(en: "Shadow angle", zh: "阴影角度"),
+                            value: $shadowAngle,
+                            resetValue: 270
+                        )
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -727,6 +757,18 @@ struct ContentView: View {
         Text(title)
             .font(.title2.weight(.semibold))
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func angleSettingRow(title: String, value: Binding<Double>, resetValue: Double) -> some View {
+        SliderSettingRow(
+            title: title,
+            value: value,
+            range: -180...360,
+            valueText: "\(Int(value.wrappedValue.rounded()))°",
+            resetTitle: t(en: "Reset", zh: "重置")
+        ) {
+            value.wrappedValue = resetValue
+        }
     }
 
     private func previewContent(previewImage: NSImage?, contentWidth: CGFloat, contentHeight: CGFloat) -> some View {
@@ -860,13 +902,16 @@ struct ContentView: View {
             foregroundColor: NSColor(foregroundColor),
             secondaryForegroundColor: NSColor(secondaryForegroundColor),
             useForegroundGradient: useForegroundGradient,
+            foregroundGradientAngle: foregroundGradientAngle,
             backgroundColor: NSColor(backgroundColor),
             secondaryBackgroundColor: NSColor(secondaryBackgroundColor),
             useGradient: useGradient,
+            backgroundGradientAngle: backgroundGradientAngle,
             cornerRadiusRatio: cornerRadiusRatio,
             contentPaddingRatio: contentPaddingRatio,
             symbolScaleRatio: symbolScaleRatio,
-            shadowStrength: shadowStrength
+            shadowStrength: shadowStrength,
+            shadowAngle: shadowAngle
         )
     }
 
@@ -1043,14 +1088,17 @@ struct ContentView: View {
             foregroundColor: ColorValue(color: foregroundColor),
             useForegroundGradient: useForegroundGradient,
             secondaryForegroundColor: ColorValue(color: secondaryForegroundColor),
+            foregroundGradientAngle: foregroundGradientAngle,
             backgroundColor: ColorValue(color: backgroundColor),
             useGradient: useGradient,
             secondaryBackgroundColor: ColorValue(color: secondaryBackgroundColor),
+            backgroundGradientAngle: backgroundGradientAngle,
             cornerRadiusRatio: cornerRadiusRatio,
             visualSizePreset: visualSizePreset,
             contentPaddingRatio: contentPaddingRatio,
             symbolScaleRatio: symbolScaleRatio,
             shadowStrength: shadowStrength,
+            shadowAngle: shadowAngle,
             iconSetName: iconSetName,
             exportPlatforms: exportPlatforms.map(\.rawValue),
             fluentEmojiAssetPath: selectedFluentEmojiAssetPath.isEmpty ? nil : selectedFluentEmojiAssetPath,
@@ -1065,14 +1113,17 @@ struct ContentView: View {
             project.foregroundColor != ColorValue(color: foregroundColor) ||
             project.useForegroundGradient != useForegroundGradient ||
             project.secondaryForegroundColor != ColorValue(color: secondaryForegroundColor) ||
+            (project.foregroundGradientAngle ?? 45) != foregroundGradientAngle ||
             project.backgroundColor != ColorValue(color: backgroundColor) ||
             project.useGradient != useGradient ||
             project.secondaryBackgroundColor != ColorValue(color: secondaryBackgroundColor) ||
+            (project.backgroundGradientAngle ?? -45) != backgroundGradientAngle ||
             project.cornerRadiusRatio != cornerRadiusRatio ||
             project.visualSizePreset != visualSizePreset ||
             project.contentPaddingRatio != contentPaddingRatio ||
             project.symbolScaleRatio != symbolScaleRatio ||
             project.shadowStrength != shadowStrength ||
+            (project.shadowAngle ?? 270) != shadowAngle ||
             project.iconSetName != iconSetName ||
             Set(project.exportPlatforms) != Set(exportPlatforms.map(\.rawValue)) ||
             (project.fluentEmojiAssetPath ?? "") != selectedFluentEmojiAssetPath ||
@@ -1097,14 +1148,17 @@ struct ContentView: View {
         foregroundColor = project.foregroundColor.color
         useForegroundGradient = project.useForegroundGradient
         secondaryForegroundColor = project.secondaryForegroundColor.color
+        foregroundGradientAngle = project.foregroundGradientAngle ?? 45
         backgroundColor = project.backgroundColor.color
         useGradient = project.useGradient
         secondaryBackgroundColor = project.secondaryBackgroundColor.color
+        backgroundGradientAngle = project.backgroundGradientAngle ?? -45
         cornerRadiusRatio = project.cornerRadiusRatio
         visualSizePreset = project.visualSizePreset
         contentPaddingRatio = project.contentPaddingRatio
         symbolScaleRatio = project.symbolScaleRatio
         shadowStrength = project.shadowStrength
+        shadowAngle = project.shadowAngle ?? 270
         iconSetName = project.iconSetName
         exportPlatforms = Set(project.exportPlatforms.compactMap(IconRenderer.ExportPlatform.init(rawValue:)))
         fluentEmojiStyle = project.fluentEmojiStyle ?? .threeD
@@ -1152,14 +1206,17 @@ struct ContentView: View {
         foregroundColor = .white
         useForegroundGradient = false
         secondaryForegroundColor = Color(red: 1.0, green: 0.86, blue: 0.25)
+        foregroundGradientAngle = 45
         backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
         useGradient = true
         secondaryBackgroundColor = Color(red: 0.39, green: 0.20, blue: 0.98)
+        backgroundGradientAngle = -45
         cornerRadiusRatio = 0.24
         visualSizePreset = .balanced
         contentPaddingRatio = 0.10
         symbolScaleRatio = 0.44
         shadowStrength = 0.25
+        shadowAngle = 270
         iconSetName = "AppIcon"
         fluentEmojiQuery = ""
         fluentEmojiStyle = .threeD

@@ -63,13 +63,16 @@ struct IconRenderer {
     let foregroundColor: NSColor
     let secondaryForegroundColor: NSColor
     let useForegroundGradient: Bool
+    let foregroundGradientAngle: Double
     let backgroundColor: NSColor
     let secondaryBackgroundColor: NSColor
     let useGradient: Bool
+    let backgroundGradientAngle: Double
     let cornerRadiusRatio: Double
     let contentPaddingRatio: Double
     let symbolScaleRatio: Double
     let shadowStrength: Double
+    let shadowAngle: Double
 
     private let specs: [IconSpec] = [
         .init(filename: "appicon-iphone-20@2x.png", idiom: "iphone", pointSize: 20, pixelSize: 40, scale: "2x", platform: .iphone, role: nil, subtype: nil),
@@ -118,7 +121,7 @@ struct IconRenderer {
 
         if useGradient {
             let gradient = NSGradient(colors: [backgroundColor, secondaryBackgroundColor])
-            gradient?.draw(in: bezierPath, angle: -45)
+            gradient?.draw(in: bezierPath, angle: backgroundGradientAngle)
         } else {
             backgroundColor.setFill()
             bezierPath.fill()
@@ -287,8 +290,10 @@ struct IconRenderer {
         guard shadowStrength > 0 else { return }
 
         let shadow = NSShadow()
+        let distance = size * 0.025
+        let radians = shadowAngle * .pi / 180
         shadow.shadowColor = NSColor.black.withAlphaComponent(shadowStrength * 0.7)
-        shadow.shadowOffset = NSSize(width: 0, height: -(size * 0.025))
+        shadow.shadowOffset = NSSize(width: cos(radians) * distance, height: sin(radians) * distance)
         shadow.shadowBlurRadius = size * 0.06
         shadow.set()
     }
@@ -388,7 +393,19 @@ struct IconRenderer {
     }
 
     private func gradientProgress(at point: NSPoint, in rect: NSRect) -> CGFloat {
-        let progress = ((point.x - rect.minX) + (point.y - rect.minY)) / max(rect.width + rect.height, 1)
+        let radians = foregroundGradientAngle * .pi / 180
+        let direction = CGPoint(x: cos(radians), y: sin(radians))
+        let corners = [
+            CGPoint(x: rect.minX, y: rect.minY),
+            CGPoint(x: rect.maxX, y: rect.minY),
+            CGPoint(x: rect.minX, y: rect.maxY),
+            CGPoint(x: rect.maxX, y: rect.maxY)
+        ]
+        let projections = corners.map { ($0.x * direction.x) + ($0.y * direction.y) }
+        let minProjection = projections.min() ?? 0
+        let maxProjection = projections.max() ?? 1
+        let pointProjection = (point.x * direction.x) + (point.y * direction.y)
+        let progress = (pointProjection - minProjection) / max(maxProjection - minProjection, 1)
         return min(max(progress, 0), 1)
     }
 
