@@ -606,7 +606,7 @@ struct ContentView: View {
             panelTitle(t(en: "Configuration", zh: "配置"))
                 .frame(height: panelTitleHeight, alignment: .topLeading)
 
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(t(en: "Visual size", zh: "视觉大小"))
@@ -711,7 +711,6 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .scrollIndicators(.hidden)
         }
         .padding(panelPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
