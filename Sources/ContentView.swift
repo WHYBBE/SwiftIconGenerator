@@ -161,6 +161,9 @@ struct ContentView: View {
         "🌈", "🌙", "☀️", "🍀", "🦄", "🐼", "🍎", "📦",
         "💬", "📷", "🎵", "🛠️", "🧩", "📚", "🧪", "🎮"
     ]
+    private let panelPadding: CGFloat = 18
+    private let panelTitleHeight: CGFloat = 30
+    private let panelContentSpacing: CGFloat = 12
 
     private var filteredSymbols: [String] {
         let trimmedQuery = symbolQuery.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -287,17 +290,20 @@ struct ContentView: View {
 
     private var mainWorkspace: some View {
         GeometryReader { proxy in
-            let unitWidth = max((proxy.size.width - 2) / 3.2, 260)
+            let availableWidth = max(proxy.size.width - 2, 0)
+            let sourceWidth = availableWidth * 0.31
+            let settingsWidth = availableWidth * 0.38
+            let previewWidth = availableWidth - sourceWidth - settingsWidth
 
             HStack(spacing: 0) {
                 symbolPanel
-                    .frame(width: unitWidth)
+                    .frame(width: sourceWidth)
                 Divider()
                 settingsPanel
-                    .frame(width: unitWidth * 1.2)
+                    .frame(width: settingsWidth)
                 Divider()
                 previewPanel
-                    .frame(width: unitWidth)
+                    .frame(width: previewWidth)
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
         }
@@ -376,7 +382,7 @@ struct ContentView: View {
 
     private var symbolPanel: some View {
         sourcePanelContent
-            .padding(24)
+            .padding(panelPadding)
             .frame(maxHeight: .infinity)
             .background(sourcePanelBackground)
     }
@@ -387,20 +393,12 @@ struct ContentView: View {
 
     private var sourcePanelContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sourcePanelHeader
-            sourceControls
-        }
-    }
-
-    private var sourcePanelHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(t(en: "Icon", zh: "图标"))
-                .font(.title2.weight(.semibold))
-
+            panelTitle(t(en: "Icon", zh: "图标"))
+                .frame(height: panelTitleHeight, alignment: .topLeading)
             iconModePicker
                 .frame(maxWidth: .infinity)
+            sourceControls
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var iconModePicker: some View {
@@ -528,153 +526,172 @@ struct ContentView: View {
     }
 
     private var settingsPanel: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(t(en: "Configuration", zh: "配置"))
-                    .font(.title2.weight(.semibold))
+        VStack(alignment: .leading, spacing: panelContentSpacing) {
+            panelTitle(t(en: "Configuration", zh: "配置"))
+                .frame(height: panelTitleHeight, alignment: .topLeading)
 
+            ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Group {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(t(en: "Visual size", zh: "视觉大小"))
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(t(en: "Visual size", zh: "视觉大小"))
 
-                            Picker(t(en: "Visual size", zh: "视觉大小"), selection: $visualSizePreset) {
-                                ForEach(VisualSizePreset.allCases) { preset in
-                                    Text(preset.title(language: appLanguage)).tag(preset)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .labelsHidden()
-                            .onChange(of: visualSizePreset) { _, newPreset in
-                                applyVisualSizePreset(newPreset)
+                        Picker(t(en: "Visual size", zh: "视觉大小"), selection: $visualSizePreset) {
+                            ForEach(VisualSizePreset.allCases) { preset in
+                                Text(preset.title(language: appLanguage)).tag(preset)
                             }
                         }
-
-                        if iconMode == .sfSymbol || (iconMode == .fluentEmoji && fluentEmojiStyle.usesForegroundColor) {
-                            GradientColorSection(
-                                title: t(en: "Foreground", zh: "前景"),
-                                startTitle: t(en: "Start color", zh: "起始色"),
-                                endTitle: t(en: "End color", zh: "结束色"),
-                                gradientTitle: t(en: "Gradient", zh: "渐变"),
-                                startColor: $foregroundColor,
-                                endColor: $secondaryForegroundColor,
-                                usesGradient: $useForegroundGradient
-                            )
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .onChange(of: visualSizePreset) { _, newPreset in
+                            applyVisualSizePreset(newPreset)
                         }
+                    }
 
+                    if iconMode == .sfSymbol || (iconMode == .fluentEmoji && fluentEmojiStyle.usesForegroundColor) {
                         GradientColorSection(
-                            title: t(en: "Background", zh: "背景"),
+                            title: t(en: "Foreground", zh: "前景"),
                             startTitle: t(en: "Start color", zh: "起始色"),
                             endTitle: t(en: "End color", zh: "结束色"),
                             gradientTitle: t(en: "Gradient", zh: "渐变"),
-                            startColor: $backgroundColor,
-                            endColor: $secondaryBackgroundColor,
-                            usesGradient: $useGradient
+                            startColor: $foregroundColor,
+                            endColor: $secondaryForegroundColor,
+                            usesGradient: $useForegroundGradient
                         )
+                    }
 
-                        SliderSettingRow(
-                            title: t(en: "Corner radius", zh: "圆角"),
-                            value: $cornerRadiusRatio,
-                            range: 0.12...0.34,
-                            valueText: cornerRadiusRatio.formatted(.percent.precision(.fractionLength(0))),
-                            resetTitle: t(en: "Reset", zh: "重置")
-                        ) {
-                            cornerRadiusRatio = visualSizePreset.cornerRadiusRatio
-                        }
+                    GradientColorSection(
+                        title: t(en: "Background", zh: "背景"),
+                        startTitle: t(en: "Start color", zh: "起始色"),
+                        endTitle: t(en: "End color", zh: "结束色"),
+                        gradientTitle: t(en: "Gradient", zh: "渐变"),
+                        startColor: $backgroundColor,
+                        endColor: $secondaryBackgroundColor,
+                        usesGradient: $useGradient
+                    )
 
-                        SliderSettingRow(
-                            title: t(en: "Content padding", zh: "内容边距"),
-                            value: $contentPaddingRatio,
-                            range: 0.04...0.2,
-                            valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0))),
-                            resetTitle: t(en: "Reset", zh: "重置")
-                        ) {
-                            contentPaddingRatio = visualSizePreset.contentPaddingRatio
-                        }
+                    SliderSettingRow(
+                        title: t(en: "Corner radius", zh: "圆角"),
+                        value: $cornerRadiusRatio,
+                        range: 0.12...0.34,
+                        valueText: cornerRadiusRatio.formatted(.percent.precision(.fractionLength(0))),
+                        resetTitle: t(en: "Reset", zh: "重置")
+                    ) {
+                        cornerRadiusRatio = visualSizePreset.cornerRadiusRatio
+                    }
 
-                        SliderSettingRow(
-                            title: t(en: "Symbol scale", zh: "符号缩放"),
-                            value: $symbolScaleRatio,
-                            range: 0.28...0.62,
-                            valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0))),
-                            resetTitle: t(en: "Reset", zh: "重置")
-                        ) {
-                            symbolScaleRatio = visualSizePreset.symbolScaleRatio
-                        }
+                    SliderSettingRow(
+                        title: t(en: "Content padding", zh: "内容边距"),
+                        value: $contentPaddingRatio,
+                        range: 0.04...0.2,
+                        valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0))),
+                        resetTitle: t(en: "Reset", zh: "重置")
+                    ) {
+                        contentPaddingRatio = visualSizePreset.contentPaddingRatio
+                    }
 
-                        SliderSettingRow(
-                            title: t(en: "Shadow", zh: "阴影"),
-                            value: $shadowStrength,
-                            range: 0...0.5,
-                            valueText: shadowStrength.formatted(.percent.precision(.fractionLength(0))),
-                            resetTitle: t(en: "Reset", zh: "重置")
-                        ) {
-                            shadowStrength = visualSizePreset.shadowStrength
-                        }
+                    SliderSettingRow(
+                        title: t(en: "Symbol scale", zh: "符号缩放"),
+                        value: $symbolScaleRatio,
+                        range: 0.28...0.62,
+                        valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0))),
+                        resetTitle: t(en: "Reset", zh: "重置")
+                    ) {
+                        symbolScaleRatio = visualSizePreset.symbolScaleRatio
+                    }
+
+                    SliderSettingRow(
+                        title: t(en: "Shadow", zh: "阴影"),
+                        value: $shadowStrength,
+                        range: 0...0.5,
+                        valueText: shadowStrength.formatted(.percent.precision(.fractionLength(0))),
+                        resetTitle: t(en: "Reset", zh: "重置")
+                    ) {
+                        shadowStrength = visualSizePreset.shadowStrength
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
+        .padding(panelPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var previewPanel: some View {
-        let previewImage = makePreviewImage(size: 196)
+        GeometryReader { proxy in
+            let contentWidth = max(proxy.size.width - (panelPadding * 2), 120)
+            let previewImage = makePreviewImage(size: 196)
 
-        return VStack(spacing: 16) {
-            Text(t(en: "Preview", zh: "预览"))
-                .font(.title2.weight(.semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(spacing: panelContentSpacing) {
+                panelTitle(t(en: "Preview", zh: "预览"))
+                    .frame(height: panelTitleHeight, alignment: .topLeading)
 
-            previewContent(previewImage: previewImage)
+                GeometryReader { contentProxy in
+                    previewContent(
+                        previewImage: previewImage,
+                        contentWidth: contentWidth,
+                        contentHeight: contentProxy.size.height
+                    )
+                    .frame(width: contentProxy.size.width, height: contentProxy.size.height, alignment: .center)
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            exportPanel
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(nsColor: .underPageBackgroundColor),
-                    Color(nsColor: .windowBackgroundColor)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                exportPanel
+            }
+            .padding(panelPadding)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color(nsColor: .underPageBackgroundColor),
+                        Color(nsColor: .windowBackgroundColor)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
             )
-        )
+        }
     }
 
-    private func previewContent(previewImage: NSImage?) -> some View {
-        VStack(spacing: 14) {
-            Spacer(minLength: 0)
+    private func panelTitle(_ title: String) -> some View {
+        Text(title)
+            .font(.title2.weight(.semibold))
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
+    private func previewContent(previewImage: NSImage?, contentWidth: CGFloat, contentHeight: CGFloat) -> some View {
+        let maxCardHeight = max(120, contentHeight - 112)
+        let cardSize = min(260, max(132, min(contentWidth, maxCardHeight)))
+        let iconSize = min(196, cardSize * 0.74)
+        let smallBaseSize = min(96, max(32, (contentWidth - 68) / 2.07))
+        let smallSizes = [smallBaseSize * 0.4, smallBaseSize * 0.67, smallBaseSize]
+
+        return VStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor))
                     .shadow(color: .black.opacity(0.08), radius: 24, y: 10)
 
-                iconPreview(image: previewImage, size: 196)
+                iconPreview(image: previewImage, size: iconSize)
                     .shadow(color: .black.opacity(0.14), radius: 22, y: 10)
             }
-            .frame(width: 260, height: 260)
+            .frame(width: cardSize, height: cardSize)
 
             Text(previewTitle)
                 .font(.title3.weight(.semibold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: contentWidth)
 
             HStack(spacing: 10) {
-                ForEach([32.0, 64.0, 96.0], id: \.self) { size in
+                ForEach(smallSizes, id: \.self) { size in
                     iconPreview(image: previewImage, size: size)
                         .padding(8)
                         .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
-
-            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var exportPanel: some View {
@@ -708,17 +725,32 @@ struct ContentView: View {
                     }
                 }
 
-                HStack(spacing: 10) {
-                    Button(saveProjectTitle, action: saveCurrentProject)
-                        .buttonStyle(.bordered)
-
-                    if canSaveAsNewProject {
-                        Button(t(en: "Save as New", zh: "另存为新项目"), action: saveCurrentProjectAsNew)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        Button(saveProjectTitle, action: saveCurrentProject)
                             .buttonStyle(.bordered)
+
+                        if canSaveAsNewProject {
+                            Button(t(en: "Save as New", zh: "另存为新项目"), action: saveCurrentProjectAsNew)
+                                .buttonStyle(.bordered)
+                        }
+
+                        Button(t(en: "Export", zh: "导出"), action: exportIconSet)
+                            .buttonStyle(.borderedProminent)
                     }
 
-                    Button(t(en: "Export", zh: "导出"), action: exportIconSet)
-                        .buttonStyle(.borderedProminent)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button(saveProjectTitle, action: saveCurrentProject)
+                            .buttonStyle(.bordered)
+
+                        if canSaveAsNewProject {
+                            Button(t(en: "Save as New", zh: "另存为新项目"), action: saveCurrentProjectAsNew)
+                                .buttonStyle(.bordered)
+                        }
+
+                        Button(t(en: "Export", zh: "导出"), action: exportIconSet)
+                            .buttonStyle(.borderedProminent)
+                    }
                 }
 
                 if !exportMessage.isEmpty {
