@@ -34,8 +34,6 @@ struct ContentView: View {
 
         var id: String { rawValue }
 
-        var cornerRadiusRatio: Double { 0.24 }
-
         func title(language: AppLanguage) -> String {
             switch self {
             case .compact:
@@ -68,8 +66,6 @@ struct ContentView: View {
                 return 0.50
             }
         }
-
-        var shadowStrength: Double { 0.25 }
     }
 
     private static let defaultExportPlatformRawValues = IconRenderer.ExportPlatform.allCases
@@ -608,18 +604,53 @@ struct ContentView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(t(en: "Visual size", zh: "视觉大小"))
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(t(en: "Layout", zh: "布局"))
+                            .font(.headline)
 
-                        Picker(t(en: "Visual size", zh: "视觉大小"), selection: $visualSizePreset) {
-                            ForEach(VisualSizePreset.allCases) { preset in
-                                Text(preset.title(language: appLanguage)).tag(preset)
+                        SliderSettingRow(
+                            title: t(en: "Corner radius", zh: "圆角"),
+                            value: $cornerRadiusRatio,
+                            range: 0.12...0.34,
+                            valueText: cornerRadiusRatio.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset", zh: "重置")
+                        ) {
+                            cornerRadiusRatio = 0.24
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(t(en: "Visual size", zh: "视觉大小"))
+
+                            Picker(t(en: "Visual size", zh: "视觉大小"), selection: $visualSizePreset) {
+                                ForEach(VisualSizePreset.allCases) { preset in
+                                    Text(preset.title(language: appLanguage)).tag(preset)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+                            .onChange(of: visualSizePreset) { _, newPreset in
+                                applyVisualSizePreset(newPreset)
                             }
                         }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .onChange(of: visualSizePreset) { _, newPreset in
-                            applyVisualSizePreset(newPreset)
+
+                        SliderSettingRow(
+                            title: t(en: "Content padding", zh: "内容边距"),
+                            value: $contentPaddingRatio,
+                            range: 0.04...0.2,
+                            valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset to preset", zh: "重置为预设")
+                        ) {
+                            contentPaddingRatio = visualSizePreset.contentPaddingRatio
+                        }
+
+                        SliderSettingRow(
+                            title: t(en: "Symbol scale", zh: "符号缩放"),
+                            value: $symbolScaleRatio,
+                            range: 0.28...0.62,
+                            valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset to preset", zh: "重置为预设")
+                        ) {
+                            symbolScaleRatio = visualSizePreset.symbolScaleRatio
                         }
                     }
 
@@ -661,52 +692,27 @@ struct ContentView: View {
                         )
                     }
 
-                    SliderSettingRow(
-                        title: t(en: "Corner radius", zh: "圆角"),
-                        value: $cornerRadiusRatio,
-                        range: 0.12...0.34,
-                        valueText: cornerRadiusRatio.formatted(.percent.precision(.fractionLength(0))),
-                        resetTitle: t(en: "Reset", zh: "重置")
-                    ) {
-                        cornerRadiusRatio = visualSizePreset.cornerRadiusRatio
-                    }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(t(en: "Shadow", zh: "阴影"))
+                            .font(.headline)
 
-                    SliderSettingRow(
-                        title: t(en: "Content padding", zh: "内容边距"),
-                        value: $contentPaddingRatio,
-                        range: 0.04...0.2,
-                        valueText: contentPaddingRatio.formatted(.percent.precision(.fractionLength(0))),
-                        resetTitle: t(en: "Reset", zh: "重置")
-                    ) {
-                        contentPaddingRatio = visualSizePreset.contentPaddingRatio
-                    }
+                        SliderSettingRow(
+                            title: t(en: "Strength", zh: "强度"),
+                            value: $shadowStrength,
+                            range: 0...0.5,
+                            valueText: shadowStrength.formatted(.percent.precision(.fractionLength(0))),
+                            resetTitle: t(en: "Reset", zh: "重置")
+                        ) {
+                            shadowStrength = 0.25
+                        }
 
-                    SliderSettingRow(
-                        title: t(en: "Symbol scale", zh: "符号缩放"),
-                        value: $symbolScaleRatio,
-                        range: 0.28...0.62,
-                        valueText: symbolScaleRatio.formatted(.percent.precision(.fractionLength(0))),
-                        resetTitle: t(en: "Reset", zh: "重置")
-                    ) {
-                        symbolScaleRatio = visualSizePreset.symbolScaleRatio
-                    }
-
-                    SliderSettingRow(
-                        title: t(en: "Shadow", zh: "阴影"),
-                        value: $shadowStrength,
-                        range: 0...0.5,
-                        valueText: shadowStrength.formatted(.percent.precision(.fractionLength(0))),
-                        resetTitle: t(en: "Reset", zh: "重置")
-                    ) {
-                        shadowStrength = visualSizePreset.shadowStrength
-                    }
-
-                    if shadowStrength > 0 {
-                        angleSettingRow(
-                            title: t(en: "Shadow angle", zh: "阴影角度"),
-                            value: $shadowAngle,
-                            resetValue: 270
-                        )
+                        if shadowStrength > 0 {
+                            angleSettingRow(
+                                title: t(en: "Angle", zh: "角度"),
+                                value: $shadowAngle,
+                                resetValue: 270
+                            )
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -945,10 +951,8 @@ struct ContentView: View {
     }
 
     private func applyVisualSizePreset(_ preset: VisualSizePreset) {
-        cornerRadiusRatio = preset.cornerRadiusRatio
         contentPaddingRatio = preset.contentPaddingRatio
         symbolScaleRatio = preset.symbolScaleRatio
-        shadowStrength = preset.shadowStrength
     }
 
     private func t(en: String, zh: String) -> String {
