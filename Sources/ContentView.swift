@@ -19,7 +19,7 @@ struct ContentView: View {
             case .sfSymbol:
                 return "SF Symbols"
             case .emoji:
-                return language.text(en: "Emoji", zh: "表情符号")
+                return "Emoji"
             case .fluentEmoji:
                 return "Fluent Emoji"
             }
@@ -393,12 +393,14 @@ struct ContentView: View {
     }
 
     private var sourcePanelHeader: some View {
-        HStack(spacing: 12) {
-            Text(t(en: "Icon Source", zh: "图标来源"))
+        VStack(alignment: .leading, spacing: 10) {
+            Text(t(en: "Icon", zh: "图标"))
                 .font(.title2.weight(.semibold))
 
             iconModePicker
+                .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var iconModePicker: some View {
@@ -436,9 +438,6 @@ struct ContentView: View {
 
     private var symbolControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(t(en: "Symbol", zh: "符号"))
-                .font(.headline)
-
             TextField(t(en: "SF Symbol name", zh: "SF Symbol 名称"), text: $symbolName)
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .symbolName)
@@ -466,9 +465,6 @@ struct ContentView: View {
 
     private var emojiControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(t(en: "Emoji", zh: "表情符号"))
-                .font(.headline)
-
             TextField(t(en: "Emoji", zh: "表情符号"), text: $emoji)
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .emoji)
@@ -497,9 +493,6 @@ struct ContentView: View {
 
     private var fluentEmojiControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Fluent Emoji")
-                .font(.headline)
-
             Picker(t(en: "Style", zh: "风格"), selection: $fluentEmojiStyle) {
                 ForEach(FluentEmojiStyle.allCases) { style in
                     Text(style.title).tag(style)
