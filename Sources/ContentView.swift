@@ -99,6 +99,11 @@ struct ContentView: View {
         var fluentEmojiStyle: FluentEmojiStyle?
     }
 
+    private struct FluentEmojiAssetGroup {
+        let initial: String
+        let assets: [FluentEmojiAsset]
+    }
+
     private struct ColorValue: Codable, Equatable {
         var red: Double
         var green: Double
@@ -195,6 +200,24 @@ struct ContentView: View {
         return fluentEmojiAssets.filter {
             $0.name.localizedCaseInsensitiveContains(trimmedQuery)
         }
+    }
+
+    private var groupedFilteredFluentEmojiAssets: [FluentEmojiAssetGroup] {
+        let groups = Dictionary(grouping: filteredFluentEmojiAssets) { asset in
+            fluentEmojiInitial(for: asset.name)
+        }
+
+        return groups
+            .map { FluentEmojiAssetGroup(initial: $0.key, assets: $0.value) }
+            .sorted { lhs, rhs in
+                if lhs.initial == "#" { return false }
+                if rhs.initial == "#" { return true }
+                return lhs.initial.localizedCaseInsensitiveCompare(rhs.initial) == .orderedAscending
+            }
+    }
+
+    private var shouldShowFluentEmojiQuickIndex: Bool {
+        filteredFluentEmojiAssets.count > 80 && groupedFilteredFluentEmojiAssets.count > 6
     }
 
     private var selectedFluentEmojiAsset: FluentEmojiAsset? {
@@ -506,19 +529,47 @@ struct ContentView: View {
             TextField(t(en: "Search Fluent Emoji", zh: "搜索 Fluent Emoji"), text: $fluentEmojiQuery)
                 .textFieldStyle(.roundedBorder)
 
-            ScrollView(.vertical, showsIndicators: false) {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 86), spacing: 10)], spacing: 10) {
-                    ForEach(filteredFluentEmojiAssets) { asset in
-                        FluentEmojiPickerCell(
-                            asset: asset,
-                            isTemplate: fluentEmojiStyle.usesForegroundColor,
-                            isSelected: asset.imageURL.path == selectedFluentEmojiAssetPath
-                        ) {
-                            selectedFluentEmojiAssetPath = asset.imageURL.path
+            ScrollViewReader { proxy in
+                HStack(alignment: .top, spacing: 6) {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(groupedFilteredFluentEmojiAssets, id: \.initial) { group in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Color.clear
+                                        .frame(height: 0)
+                                        .id(fluentEmojiGroupAnchorID(group.initial))
+
+                                    Text(group.initial)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 2)
+
+                                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 86), spacing: 10)], spacing: 10) {
+                                        ForEach(group.assets) { asset in
+                                            FluentEmojiPickerCell(
+                                                asset: asset,
+                                                isTemplate: fluentEmojiStyle.usesForegroundColor,
+                                                isSelected: asset.imageURL.path == selectedFluentEmojiAssetPath
+                                            ) {
+                                                selectedFluentEmojiAssetPath = asset.imageURL.path
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(1)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    if shouldShowFluentEmojiQuickIndex {
+                        FluentEmojiQuickIndex(initials: groupedFilteredFluentEmojiAssets.map(\.initial)) { initial in
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                proxy.scrollTo(fluentEmojiGroupAnchorID(initial), anchor: .top)
+                            }
                         }
                     }
                 }
-                .padding(1)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(1)
@@ -850,6 +901,19 @@ struct ContentView: View {
         guard fluentEmojiIndex == nil, isFluentEmojiFolderValid else { return }
         fluentEmojiIndex = FluentEmojiIndex.load(folderPath: fluentEmojiFolderPath)
         fluentEmojiIndexExists = fluentEmojiIndex != nil
+    }
+
+    private func fluentEmojiInitial(for name: String) -> String {
+        guard let firstCharacter = name.trimmingCharacters(in: .whitespacesAndNewlines).first else {
+            return "#"
+        }
+
+        let initial = String(firstCharacter).uppercased()
+        return initial.range(of: #"^[A-Z]$"#, options: .regularExpression) == nil ? "#" : initial
+    }
+
+    private func fluentEmojiGroupAnchorID(_ initial: String) -> String {
+        "fluent-emoji-group-\(initial)"
     }
 
     private var savedProjects: [SavedProject] {
@@ -1273,6 +1337,34 @@ private struct FluentEmojiPickerCell: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct FluentEmojiQuickIndex: View {
+    let initials: [String]
+    let action: (String) -> Void
+
+    var body: some View {
+        VStack(spacing: 2) {
+            ForEach(initials, id: \.self) { initial in
+                Button {
+                    action(initial)
+                } label: {
+                    Text(initial)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 18, height: 16)
+                        .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 5)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        }
     }
 }
 
