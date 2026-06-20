@@ -241,6 +241,7 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 300)
         } detail: {
             mainWorkspace
+                .navigationSplitViewColumnWidth(min: 880, ideal: 900)
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(appTheme.colorScheme)
@@ -313,13 +314,14 @@ struct ContentView: View {
     private var mainWorkspace: some View {
         GeometryReader { proxy in
             let availableWidth = max(proxy.size.width - 2, 0)
-            let sourceWidth = availableWidth * 0.31
-            let settingsWidth = availableWidth * 0.38
+            let sourceWidth = availableWidth / 2.9
+            let settingsWidth = availableWidth / 2.9
             let previewWidth = availableWidth - sourceWidth - settingsWidth
 
             HStack(spacing: 0) {
                 symbolPanel
                     .frame(width: sourceWidth)
+                    .clipped()
                 Divider()
                 settingsPanel
                     .frame(width: settingsWidth)
