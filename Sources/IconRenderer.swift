@@ -71,6 +71,8 @@ struct IconRenderer {
     let cornerRadiusRatio: Double
     let contentPaddingRatio: Double
     let symbolScaleRatio: Double
+    let contentOffsetXRatio: Double
+    let contentOffsetYRatio: Double
     let shadowStrength: Double
     let shadowAngle: Double
 
@@ -136,7 +138,7 @@ struct IconRenderer {
             let symbolConfig = NSImage.SymbolConfiguration(pointSize: size * symbolScaleRatio, weight: .bold)
             let configuredSymbol = symbolImage.withSymbolConfiguration(symbolConfig) ?? symbolImage
             let tintedSymbol = configuredSymbol.withSymbolConfiguration(.init(paletteColors: [foregroundColor])) ?? configuredSymbol
-            let symbolRect = centeredRect(for: tintedSymbol.size, canvasRect: iconRect)
+            let symbolRect = offsetRect(centeredRect(for: tintedSymbol.size, canvasRect: iconRect), in: iconRect)
 
             if !useForegroundGradient {
                 setContentShadow(size: size)
@@ -159,7 +161,7 @@ struct IconRenderer {
                 throw IconRendererError.missingEmoji
             }
 
-            let emojiRect = centeredSquareRect(in: iconRect, ratio: symbolScaleRatio)
+            let emojiRect = offsetRect(centeredSquareRect(in: iconRect, ratio: symbolScaleRatio), in: iconRect)
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.alignment = .center
 
@@ -189,7 +191,7 @@ struct IconRenderer {
                 throw IconRendererError.missingEmoji
             }
 
-            let imageRect = centeredSquareRect(in: iconRect, ratio: symbolScaleRatio)
+            let imageRect = offsetRect(centeredSquareRect(in: iconRect, ratio: symbolScaleRatio), in: iconRect)
             let drawRect = aspectFitRect(for: sourceImage.size, in: imageRect)
 
             if isTemplate {
@@ -284,6 +286,13 @@ struct IconRenderer {
         let originX = canvasRect.midX - (width / 2)
         let originY = canvasRect.midY - (height / 2)
         return NSRect(x: originX, y: originY, width: width, height: height)
+    }
+
+    private func offsetRect(_ rect: NSRect, in canvasRect: NSRect) -> NSRect {
+        rect.offsetBy(
+            dx: canvasRect.width * contentOffsetXRatio,
+            dy: canvasRect.height * contentOffsetYRatio
+        )
     }
 
     private func setContentShadow(size: CGFloat) {

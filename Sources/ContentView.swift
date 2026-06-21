@@ -91,6 +91,8 @@ struct ContentView: View {
         var visualSizePreset: VisualSizePreset
         var contentPaddingRatio: Double
         var symbolScaleRatio: Double
+        var contentOffsetXRatio: Double?
+        var contentOffsetYRatio: Double?
         var shadowStrength: Double
         var shadowAngle: Double?
         var iconSetName: String
@@ -139,6 +141,8 @@ struct ContentView: View {
     @State private var visualSizePreset: VisualSizePreset = .balanced
     @State private var contentPaddingRatio = 0.10
     @State private var symbolScaleRatio = 0.44
+    @State private var contentOffsetXRatio = 0.0
+    @State private var contentOffsetYRatio = 0.0
     @State private var shadowStrength = 0.25
     @State private var shadowAngle = 270.0
     @State private var iconSetName = "AppIcon"
@@ -655,6 +659,26 @@ struct ContentView: View {
                         ) {
                             symbolScaleRatio = visualSizePreset.symbolScaleRatio
                         }
+
+                        SliderSettingRow(
+                            title: t(en: "Horizontal position", zh: "水平位置"),
+                            value: $contentOffsetXRatio,
+                            range: -0.35...0.35,
+                            valueText: positionOffsetText(contentOffsetXRatio),
+                            resetTitle: t(en: "Reset position", zh: "重置位置")
+                        ) {
+                            contentOffsetXRatio = 0
+                        }
+
+                        SliderSettingRow(
+                            title: t(en: "Vertical position", zh: "垂直位置"),
+                            value: $contentOffsetYRatio,
+                            range: -0.35...0.35,
+                            valueText: positionOffsetText(contentOffsetYRatio),
+                            resetTitle: t(en: "Reset position", zh: "重置位置")
+                        ) {
+                            contentOffsetYRatio = 0
+                        }
                     }
 
                     if iconMode == .sfSymbol || (iconMode == .fluentEmoji && fluentEmojiStyle.usesForegroundColor) {
@@ -925,6 +949,8 @@ struct ContentView: View {
             cornerRadiusRatio: cornerRadiusRatio,
             contentPaddingRatio: contentPaddingRatio,
             symbolScaleRatio: symbolScaleRatio,
+            contentOffsetXRatio: contentOffsetXRatio,
+            contentOffsetYRatio: contentOffsetYRatio,
             shadowStrength: shadowStrength,
             shadowAngle: shadowAngle
         )
@@ -963,6 +989,11 @@ struct ContentView: View {
     private func applyVisualSizePreset(_ preset: VisualSizePreset) {
         contentPaddingRatio = preset.contentPaddingRatio
         symbolScaleRatio = preset.symbolScaleRatio
+    }
+
+    private func positionOffsetText(_ value: Double) -> String {
+        let percentage = Int((value * 100).rounded())
+        return percentage > 0 ? "+\(percentage)%" : "\(percentage)%"
     }
 
     private func t(en: String, zh: String) -> String {
@@ -1119,6 +1150,8 @@ struct ContentView: View {
             visualSizePreset: visualSizePreset,
             contentPaddingRatio: contentPaddingRatio,
             symbolScaleRatio: symbolScaleRatio,
+            contentOffsetXRatio: contentOffsetXRatio,
+            contentOffsetYRatio: contentOffsetYRatio,
             shadowStrength: shadowStrength,
             shadowAngle: shadowAngle,
             iconSetName: iconSetName,
@@ -1144,6 +1177,8 @@ struct ContentView: View {
             project.visualSizePreset != visualSizePreset ||
             project.contentPaddingRatio != contentPaddingRatio ||
             project.symbolScaleRatio != symbolScaleRatio ||
+            (project.contentOffsetXRatio ?? 0) != contentOffsetXRatio ||
+            (project.contentOffsetYRatio ?? 0) != contentOffsetYRatio ||
             project.shadowStrength != shadowStrength ||
             (project.shadowAngle ?? 270) != shadowAngle ||
             project.iconSetName != iconSetName ||
@@ -1179,6 +1214,8 @@ struct ContentView: View {
         visualSizePreset = project.visualSizePreset
         contentPaddingRatio = project.contentPaddingRatio
         symbolScaleRatio = project.symbolScaleRatio
+        contentOffsetXRatio = project.contentOffsetXRatio ?? 0
+        contentOffsetYRatio = project.contentOffsetYRatio ?? 0
         shadowStrength = project.shadowStrength
         shadowAngle = project.shadowAngle ?? 270
         iconSetName = project.iconSetName
@@ -1237,6 +1274,8 @@ struct ContentView: View {
         visualSizePreset = .balanced
         contentPaddingRatio = 0.10
         symbolScaleRatio = 0.44
+        contentOffsetXRatio = 0
+        contentOffsetYRatio = 0
         shadowStrength = 0.25
         shadowAngle = 270
         iconSetName = "AppIcon"
