@@ -148,6 +148,7 @@ struct ContentView: View {
     @State private var iconSetName = "AppIcon"
     @State private var fluentEmojiQuery = ""
     @State private var fluentEmojiStyle: FluentEmojiStyle = .threeD
+    @State private var fluentEmojiInitialFilter = ""
     @State private var selectedFluentEmojiAssetPath = ""
     @State private var exportPlatforms: Set<IconRenderer.ExportPlatform> = Set(IconRenderer.ExportPlatform.allCases)
     @State private var exportMessage = ""
@@ -160,7 +161,6 @@ struct ContentView: View {
     @State private var fluentEmojiFolderExists = false
     @State private var fluentEmojiIndexExists = false
     @State private var fluentEmojiIndex: FluentEmojiIndex?
-    @State private var fluentEmojiScrollCoordinator = FluentEmojiScrollCoordinator()
     @State private var sfSymbolsMessage = ""
     @State private var sfSymbolsMessageIsError = false
     @AppStorage("appTheme") private var appTheme = AppTheme.system
@@ -232,6 +232,26 @@ struct ContentView: View {
             }
     }
 
+    private var activeFluentEmojiInitial: String {
+        if fluentEmojiInitialFilter.isEmpty {
+            return ""
+        }
+
+        if groupedFilteredFluentEmojiAssets.contains(where: { $0.initial == fluentEmojiInitialFilter }) {
+            return fluentEmojiInitialFilter
+        }
+
+        return ""
+    }
+
+    private var activeFluentEmojiAssets: [FluentEmojiAsset] {
+        if activeFluentEmojiInitial.isEmpty {
+            return filteredFluentEmojiAssets.sorted(by: fluentEmojiAssetSort)
+        }
+
+        return groupedFilteredFluentEmojiAssets.first { $0.initial == activeFluentEmojiInitial }?.assets ?? []
+    }
+
     private func fluentEmojiAssetSort(_ lhs: FluentEmojiAsset, _ rhs: FluentEmojiAsset) -> Bool {
         let nameComparison = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
         if nameComparison != .orderedSame {
@@ -239,10 +259,6 @@ struct ContentView: View {
         }
 
         return lhs.imageURL.path.localizedCaseInsensitiveCompare(rhs.imageURL.path) == .orderedAscending
-    }
-
-    private var shouldShowFluentEmojiQuickIndex: Bool {
-        filteredFluentEmojiAssets.count > 80 && groupedFilteredFluentEmojiAssets.count > 6
     }
 
     private var selectedFluentEmojiAsset: FluentEmojiAsset? {
@@ -567,35 +583,51 @@ struct ContentView: View {
             .onChange(of: fluentEmojiStyle) { _, _ in
                 loadFluentEmojiIndexIfNeeded()
                 selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
+                fluentEmojiInitialFilter = ""
             }
 
             TextField(t(en: "Search Fluent Emoji", zh: "搜索 Fluent Emoji"), text: $fluentEmojiQuery)
                 .textFieldStyle(.roundedBorder)
 
-            GeometryReader { geometry in
-                HStack(alignment: .top, spacing: 6) {
-                    FluentEmojiManualGridView(
-                        groups: groupedFilteredFluentEmojiAssets,
-                        isTemplate: fluentEmojiStyle.usesForegroundColor,
-                        selectedAssetPath: selectedFluentEmojiAssetPath,
-                        availableWidth: max(geometry.size.width - (shouldShowFluentEmojiQuickIndex ? 24 : 0), 86),
-                        coordinator: fluentEmojiScrollCoordinator
-                    ) { asset in
-                        withTransaction(Transaction(animation: nil)) {
-                            selectedFluentEmojiAssetPath = asset.imageURL.path
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            FluentEmojiLetterFilter(
+                initials: groupedFilteredFluentEmojiAssets.map(\.initial),
+                allTitle: t(en: "All", zh: "全部"),
+                selectedInitial: activeFluentEmojiInitial
+            ) { initial in
+                fluentEmojiInitialFilter = initial
+            }
 
-                    if shouldShowFluentEmojiQuickIndex {
-                        FluentEmojiQuickIndex(initials: groupedFilteredFluentEmojiAssets.map(\.initial)) { initial in
-                            fluentEmojiScrollCoordinator.scrollToGroup(initial)
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(activeFluentEmojiInitial.isEmpty ? t(en: "All", zh: "全部") : activeFluentEmojiInitial)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 2)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 86), spacing: 10)], spacing: 10) {
+                        ForEach(activeFluentEmojiAssets) { asset in
+                            FluentEmojiPickerCell(
+                                asset: asset,
+                                isTemplate: fluentEmojiStyle.usesForegroundColor,
+                                isSelected: asset.imageURL.path == selectedFluentEmojiAssetPath
+                            ) {
+                                withTransaction(Transaction(animation: nil)) {
+                                    selectedFluentEmojiAssetPath = asset.imageURL.path
+                                }
+                            }
                         }
                     }
                 }
+                .padding(1)
+                .background(FluentEmojiScrollerAccessor())
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(1)
+        }
+        .onChange(of: fluentEmojiQuery) { _, _ in
+            if !groupedFilteredFluentEmojiAssets.contains(where: { $0.initial == fluentEmojiInitialFilter }) {
+                fluentEmojiInitialFilter = ""
+            }
         }
     }
 
@@ -1536,156 +1568,74 @@ private struct EmojiPickerCell: View {
     }
 }
 
-private struct FluentEmojiQuickIndex: View {
+private struct FluentEmojiLetterFilter: View {
     let initials: [String]
+    let allTitle: String
+    let selectedInitial: String
     let action: (String) -> Void
 
     var body: some View {
-        VStack(spacing: 2) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 34), spacing: 6)], spacing: 6) {
+            FluentEmojiLetterFilterButton(
+                title: allTitle,
+                isSelected: selectedInitial.isEmpty,
+                action: { action("") }
+            )
+
             ForEach(initials, id: \.self) { initial in
-                Button {
-                    action(initial)
-                } label: {
-                    Text(initial)
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 18, height: 16)
-                        .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .focusable(false)
+                FluentEmojiLetterFilterButton(
+                    title: initial,
+                    isSelected: initial == selectedInitial,
+                    action: { action(initial) }
+                )
             }
         }
-        .padding(.vertical, 5)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        }
     }
 }
 
-@MainActor private final class FluentEmojiScrollCoordinator {
-    weak var scrollView: NSScrollView?
-    private var anchors: [String: NSView] = [:]
-
-    func registerScrollView(_ scrollView: NSScrollView?) {
-        self.scrollView = scrollView
-    }
-
-    func registerAnchor(_ view: NSView?, for initial: String) {
-        anchors[initial] = view
-    }
-
-    func scrollToGroup(_ initial: String) {
-        guard let scrollView,
-              let documentView = scrollView.documentView,
-              let anchor = anchors[initial] else {
-            return
-        }
-
-        let frame = anchor.convert(anchor.bounds, to: documentView)
-        let maxY = max(documentView.bounds.height - scrollView.contentView.bounds.height, 0)
-        let y = min(max(frame.minY, 0), maxY)
-        scrollView.contentView.scroll(to: NSPoint(x: 0, y: y))
-        scrollView.reflectScrolledClipView(scrollView.contentView)
-    }
-}
-
-private struct FluentEmojiManualGridView: View {
-    let groups: [FluentEmojiAssetGroup]
-    let isTemplate: Bool
-    let selectedAssetPath: String
-    let availableWidth: CGFloat
-    let coordinator: FluentEmojiScrollCoordinator
-    let onSelect: (FluentEmojiAsset) -> Void
-
-    private var columnCount: Int {
-        max(Int((availableWidth + 10) / 96), 1)
-    }
-
-    private var itemWidth: CGFloat {
-        floor((availableWidth - (CGFloat(columnCount - 1) * 10)) / CGFloat(columnCount))
-    }
+private struct FluentEmojiLetterFilterButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(groups, id: \.initial) { group in
-                    VStack(alignment: .leading, spacing: 6) {
-                        FluentEmojiAnchorView(initial: group.initial, coordinator: coordinator)
-                            .frame(height: 0)
-
-                        Text(group.initial)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 2)
-
-                        ForEach(rowStarts(for: group.assets), id: \.self) { rowStart in
-                            HStack(spacing: 10) {
-                                ForEach(rowAssets(group.assets, start: rowStart)) { asset in
-                                    FluentEmojiManualGridCell(
-                                        asset: asset,
-                                        isTemplate: isTemplate,
-                                        isSelected: asset.imageURL.path == selectedAssetPath,
-                                        action: { onSelect(asset) }
-                                    )
-                                    .frame(width: itemWidth)
-                                }
-
-                                let missingCount = columnCount - rowAssets(group.assets, start: rowStart).count
-                                if missingCount > 0 {
-                                    ForEach(0..<missingCount, id: \.self) { _ in
-                                        Color.clear
-                                            .frame(width: itemWidth, height: 76)
-                                    }
-                                }
-                            }
-                        }
-                    }
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 24)
+                .background {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(isSelected ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
                 }
-            }
-            .padding(1)
-            .background(FluentEmojiScrollViewAccessor(coordinator: coordinator))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
-    }
-
-    private func rowStarts(for assets: [FluentEmojiAsset]) -> [Int] {
-        Array(stride(from: 0, to: assets.count, by: columnCount))
-    }
-
-    private func rowAssets(_ assets: [FluentEmojiAsset], start: Int) -> [FluentEmojiAsset] {
-        Array(assets[start..<min(start + columnCount, assets.count)])
+        .buttonStyle(.plain)
+        .focusable(false)
     }
 }
 
-private struct FluentEmojiManualGridCell: View {
-    private static let imageCache = NSCache<NSString, NSImage>()
-
+private struct FluentEmojiPickerCell: View {
     let asset: FluentEmojiAsset
     let isTemplate: Bool
     let isSelected: Bool
     let action: () -> Void
 
-    @State private var image: NSImage?
-
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                Group {
-                    if let image {
-                        Image(nsImage: image)
-                            .resizable()
-                            .renderingMode(isTemplate ? .template : .original)
-                            .interpolation(.high)
-                            .scaledToFit()
-                    } else {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.primary.opacity(0.06))
-                    }
-                }
-                .foregroundStyle(isTemplate ? (isSelected ? Color.white : Color.primary) : Color.primary)
-                .frame(width: 44, height: 44)
+                Image(nsImage: NSImage(contentsOf: asset.imageURL) ?? NSImage())
+                    .resizable()
+                    .renderingMode(isTemplate ? .template : .original)
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .foregroundStyle(isTemplate ? (isSelected ? Color.white : Color.primary) : Color.primary)
+                    .frame(width: 44, height: 44)
 
                 Text(asset.name)
                     .font(.caption2)
@@ -1707,75 +1657,29 @@ private struct FluentEmojiManualGridCell: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .onAppear(perform: loadImage)
-        .onChange(of: asset.imageURL.path) { _, _ in
-            image = nil
-            loadImage()
-        }
-        .onChange(of: isTemplate) { _, _ in
-            image = nil
-            loadImage()
-        }
-    }
-
-    private func loadImage() {
-        let cacheKey = "\(asset.imageURL.path)|template:\(isTemplate)"
-        if let cachedImage = Self.imageCache.object(forKey: cacheKey as NSString) {
-            image = cachedImage
-            return
-        }
-
-        let url = asset.imageURL
-        let shouldTemplate = isTemplate
-        DispatchQueue.global(qos: .userInitiated).async {
-            let data = try? Data(contentsOf: url)
-
-            DispatchQueue.main.async {
-                if asset.imageURL == url {
-                    let loadedImage = (data.flatMap(NSImage.init(data:))?.copy() as? NSImage) ?? NSImage()
-                    loadedImage.isTemplate = shouldTemplate
-                    Self.imageCache.setObject(loadedImage, forKey: cacheKey as NSString)
-                    image = loadedImage
-                }
-            }
-        }
     }
 }
 
-private struct FluentEmojiScrollViewAccessor: NSViewRepresentable {
-    let coordinator: FluentEmojiScrollCoordinator
-
+private struct FluentEmojiScrollerAccessor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
         DispatchQueue.main.async {
-            coordinator.registerScrollView(view.enclosingScrollView)
+            configureScrollView(for: view)
         }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         DispatchQueue.main.async {
-            coordinator.registerScrollView(nsView.enclosingScrollView)
+            configureScrollView(for: nsView)
         }
     }
-}
 
-private struct FluentEmojiAnchorView: NSViewRepresentable {
-    let initial: String
-    let coordinator: FluentEmojiScrollCoordinator
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async {
-            coordinator.registerAnchor(view, for: initial)
-        }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            coordinator.registerAnchor(nsView, for: initial)
-        }
+    private func configureScrollView(for view: NSView) {
+        guard let scrollView = view.enclosingScrollView else { return }
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = false
+        scrollView.scrollerStyle = .legacy
     }
 }
 
