@@ -725,7 +725,7 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(t(en: "Position presets", zh: "位置预设"))
 
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 58), spacing: 6)], spacing: 6) {
+                            HStack(spacing: 4) {
                                 PositionPresetButton(symbolName: "arrow.up.left", title: t(en: "Top left", zh: "左上")) {
                                     applyContentPositionPreset(x: -safeContentPositionOffset, y: safeContentPositionOffset)
                                 }
@@ -1600,8 +1600,15 @@ private struct PositionPresetButton: View {
                 .frame(height: 22)
                 .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
+        .buttonStyle(.plain)
+        .background {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.8), lineWidth: 1)
+        }
         .help(title)
         .accessibilityLabel(title)
     }
