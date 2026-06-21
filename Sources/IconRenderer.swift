@@ -1,6 +1,31 @@
 import AppKit
 import Foundation
 
+final class ImageFileCache: @unchecked Sendable {
+    static let shared = ImageFileCache()
+
+    private let cache = NSCache<NSString, NSImage>()
+
+    private init() {
+        cache.countLimit = 700
+    }
+
+    func image(for url: URL) -> NSImage? {
+        let key = url.path as NSString
+
+        if let cachedImage = cache.object(forKey: key) {
+            return cachedImage
+        }
+
+        guard let image = NSImage(contentsOf: url), image.isValid else {
+            return nil
+        }
+
+        cache.setObject(image, forKey: key)
+        return image
+    }
+}
+
 struct IconRenderer {
     enum IconContent {
         case symbol(String)
@@ -187,7 +212,7 @@ struct IconRenderer {
             attributedEmoji.draw(in: drawRect)
 
         case .image(let imageURL, let isTemplate):
-            guard let sourceImage = NSImage(contentsOf: imageURL), sourceImage.isValid else {
+            guard let sourceImage = ImageFileCache.shared.image(for: imageURL) else {
                 throw IconRendererError.missingEmoji
             }
 

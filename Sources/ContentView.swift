@@ -190,6 +190,8 @@ struct ContentView: View {
     @State private var previewImage: NSImage?
     @State private var pendingPreviewRender: DispatchWorkItem?
     @State private var filteredSymbolNames = SFSymbolCatalog.all
+    @State private var cachedFluentEmojiAssets: [FluentEmojiAsset] = []
+    @State private var cachedFluentEmojiAssetByPath: [String: FluentEmojiAsset] = [:]
     @State private var cachedFilteredFluentEmojiAssets: [FluentEmojiAsset] = []
     @State private var cachedGroupedFluentEmojiAssets: [FluentEmojiAssetGroup] = []
     @AppStorage("appTheme") private var appTheme = AppTheme.system
@@ -219,7 +221,7 @@ struct ContentView: View {
     }
 
     private var fluentEmojiAssets: [FluentEmojiAsset] {
-        fluentEmojiIndex?.assets(for: fluentEmojiStyle) ?? []
+        cachedFluentEmojiAssets
     }
 
     private var filteredFluentEmojiAssets: [FluentEmojiAsset] {
@@ -260,8 +262,7 @@ struct ContentView: View {
     }
 
     private var selectedFluentEmojiAsset: FluentEmojiAsset? {
-        fluentEmojiAssets.first { $0.imageURL.path == selectedFluentEmojiAssetPath }
-            ?? fluentEmojiAssets.first
+        cachedFluentEmojiAssetByPath[selectedFluentEmojiAssetPath] ?? fluentEmojiAssets.first
     }
 
     private var isFluentEmojiFolderValid: Bool {
@@ -291,7 +292,7 @@ struct ContentView: View {
                 loadExportPlatforms()
                 refreshFluentEmojiAvailability()
                 refreshSymbolFilter()
-                refreshFluentEmojiFilter()
+                refreshFluentEmojiAssets()
                 focusedField = .symbolName
                 schedulePreviewImageRender()
             }
@@ -312,6 +313,10 @@ struct ContentView: View {
         .onChange(of: fluentEmojiFolderPath) { _, _ in
             fluentEmojiIndex = nil
             refreshFluentEmojiAvailability()
+            if iconMode == .fluentEmoji {
+                loadFluentEmojiIndexIfNeeded()
+            }
+            refreshFluentEmojiAssets()
 
             if !isFluentEmojiFolderValid, iconMode == .fluentEmoji {
                 iconMode = .sfSymbol
@@ -320,18 +325,15 @@ struct ContentView: View {
             if selectedFluentEmojiAsset == nil {
                 selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
             }
-
-            refreshFluentEmojiFilter()
         }
         .onChange(of: fluentEmojiIndexVersion) { _, _ in
             fluentEmojiIndex = nil
             refreshFluentEmojiAvailability()
             if iconMode == .fluentEmoji {
                 loadFluentEmojiIndexIfNeeded()
-                selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
             }
-
-            refreshFluentEmojiFilter()
+            refreshFluentEmojiAssets()
+            selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
         }
         .alert(
             t(en: "Delete Project", zh: "删除项目"),
@@ -501,7 +503,7 @@ struct ContentView: View {
             case .fluentEmoji:
                 focusedField = nil
                 loadFluentEmojiIndexIfNeeded()
-                refreshFluentEmojiFilter()
+                refreshFluentEmojiAssets()
                 selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
             }
         }
@@ -611,7 +613,7 @@ struct ContentView: View {
                     selectedFluentEmojiAssetPath = newStyleAssets.first?.imageURL.path ?? ""
                 }
 
-                refreshFluentEmojiFilter()
+                refreshFluentEmojiAssets()
             }
 
             HStack(spacing: 8) {
@@ -1195,6 +1197,12 @@ struct ContentView: View {
         filteredSymbolNames = SFSymbolCatalog.all.filter {
             $0.localizedCaseInsensitiveContains(trimmedQuery)
         }
+    }
+
+    private func refreshFluentEmojiAssets() {
+        cachedFluentEmojiAssets = fluentEmojiIndex?.assets(for: fluentEmojiStyle) ?? []
+        cachedFluentEmojiAssetByPath = Dictionary(uniqueKeysWithValues: cachedFluentEmojiAssets.map { ($0.imageURL.path, $0) })
+        refreshFluentEmojiFilter()
     }
 
     private func refreshFluentEmojiFilter() {
@@ -1829,7 +1837,7 @@ private struct FluentEmojiPickerCell: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                Image(nsImage: NSImage(contentsOf: asset.imageURL) ?? NSImage())
+                Image(nsImage: ImageFileCache.shared.image(for: asset.imageURL) ?? NSImage())
                     .resizable()
                     .renderingMode(isTemplate ? .template : .original)
                     .interpolation(.high)
