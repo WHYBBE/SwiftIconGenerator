@@ -580,10 +580,20 @@ struct ContentView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .onChange(of: fluentEmojiStyle) { _, _ in
+            .onChange(of: fluentEmojiStyle) { oldStyle, newStyle in
+                let selectedName = fluentEmojiIndex?.assets(for: oldStyle).first {
+                    $0.imageURL.path == selectedFluentEmojiAssetPath
+                }?.name
+
                 loadFluentEmojiIndexIfNeeded()
-                selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
-                fluentEmojiInitialFilter = ""
+
+                let newStyleAssets = fluentEmojiIndex?.assets(for: newStyle) ?? []
+                if let selectedName,
+                   let matchingAsset = newStyleAssets.first(where: { $0.name == selectedName }) {
+                    selectedFluentEmojiAssetPath = matchingAsset.imageURL.path
+                } else {
+                    selectedFluentEmojiAssetPath = newStyleAssets.first?.imageURL.path ?? ""
+                }
             }
 
             TextField(t(en: "Search Fluent Emoji", zh: "搜索 Fluent Emoji"), text: $fluentEmojiQuery)
