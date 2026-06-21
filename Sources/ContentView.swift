@@ -1000,9 +1000,18 @@ struct ContentView: View {
 
     private func openSFSymbolsApp() {
         let workspace = NSWorkspace.shared
-        let fallbackURL = URL(fileURLWithPath: "/Applications/SF Symbols.app", isDirectory: true)
-        let appURL = workspace.urlForApplication(withBundleIdentifier: "com.apple.SFSymbols")
-            ?? (FileManager.default.fileExists(atPath: fallbackURL.path) ? fallbackURL : nil)
+        let fileManager = FileManager.default
+        let betaFallbackURLs = [
+            URL(fileURLWithPath: "/Applications/SF Symbols beta.app", isDirectory: true),
+            URL(fileURLWithPath: "/Applications/SF Symbols Beta.app", isDirectory: true)
+        ]
+        let releaseFallbackURL = URL(fileURLWithPath: "/Applications/SF Symbols.app", isDirectory: true)
+        let betaFallbackURL = betaFallbackURLs.first { fileManager.fileExists(atPath: $0.path) }
+        let releaseFallbackExists = fileManager.fileExists(atPath: releaseFallbackURL.path)
+        let appURL = betaFallbackURL
+            ?? workspace.urlForApplication(withBundleIdentifier: "com.apple.SFSymbols.beta")
+            ?? workspace.urlForApplication(withBundleIdentifier: "com.apple.SFSymbols")
+            ?? (releaseFallbackExists ? releaseFallbackURL : nil)
 
         guard let appURL else {
             sfSymbolsMessage = t(en: "SF Symbols app not found", zh: "未找到 SF Symbols 应用")
