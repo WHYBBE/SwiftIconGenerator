@@ -20,6 +20,7 @@ It is designed for quickly creating polished `AppIcon.appiconset` assets that ca
 - Pick from a built-in emoji list or open the macOS system emoji picker
 - Index a local Fluent Emoji repository and browse assets with quick alphabet navigation
 - Choose Fluent Emoji styles: `3D`, `Color`, `Flat`, and `High Contrast`
+- Randomly pick a Fluent Emoji from the current search or letter filter
 - Tint High Contrast Fluent Emoji with the foreground color or foreground gradient
 - Live preview at multiple icon sizes with an optional contrast background
 - Tune appearance with:
@@ -30,8 +31,10 @@ It is designed for quickly creating polished `AppIcon.appiconset` assets that ca
   - corner radius
   - content padding
   - symbol scale
+  - horizontal and vertical content position
   - shadow strength and angle
 - Visual size presets: `Compact`, `Balanced`, `Bold`
+- Compact one-row position presets for quick corner and center placement
 - Save and reload projects from the sidebar
 - Import and export app data or individual project files
 - Manage app settings for theme, language, preview background, data, Fluent Emoji indexing, and About links
@@ -122,6 +125,7 @@ Settings are available from the app menu or `Command + ,`.
 - The Xcode project is the primary way to run the app.
 - The Swift Package remains available for quick builds and local iteration.
 - Emoji rendering uses text drawing, while SF Symbols rendering uses AppKit symbol images.
+- Fluent Emoji images are cached after first load to keep picker browsing and preview updates responsive.
 - Version display is read from the app bundle. Xcode builds use `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`; SwiftPM builds fall back to a development label.
 
 ## License
