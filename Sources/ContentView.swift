@@ -133,9 +133,9 @@ struct ContentView: View {
     @State private var useForegroundGradient = false
     @State private var secondaryForegroundColor = Color(red: 1.0, green: 0.86, blue: 0.25)
     @State private var foregroundGradientAngle = 45.0
-    @State private var backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
+    @State private var backgroundColor = Color(red: 0.00, green: 0.78, blue: 0.62)
     @State private var useGradient = true
-    @State private var secondaryBackgroundColor = Color(red: 0.39, green: 0.20, blue: 0.98)
+    @State private var secondaryBackgroundColor = Color(red: 1.00, green: 0.58, blue: 0.12)
     @State private var backgroundGradientAngle = -45.0
     @State private var cornerRadiusRatio = 0.24
     @State private var visualSizePreset: VisualSizePreset = .balanced
@@ -1369,9 +1369,9 @@ struct ContentView: View {
         useForegroundGradient = false
         secondaryForegroundColor = Color(red: 1.0, green: 0.86, blue: 0.25)
         foregroundGradientAngle = 45
-        backgroundColor = Color(red: 0.17, green: 0.51, blue: 0.98)
+        backgroundColor = Color(red: 0.00, green: 0.78, blue: 0.62)
         useGradient = true
-        secondaryBackgroundColor = Color(red: 0.39, green: 0.20, blue: 0.98)
+        secondaryBackgroundColor = Color(red: 1.00, green: 0.58, blue: 0.12)
         backgroundGradientAngle = -45
         cornerRadiusRatio = 0.24
         visualSizePreset = .balanced
