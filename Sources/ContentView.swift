@@ -687,6 +687,7 @@ struct ContentView: View {
                             startTitle: t(en: "Start color", zh: "起始色"),
                             endTitle: t(en: "End color", zh: "结束色"),
                             gradientTitle: t(en: "Gradient", zh: "渐变"),
+                            randomTitle: t(en: "Randomize colors", zh: "随机颜色"),
                             startColor: $foregroundColor,
                             endColor: $secondaryForegroundColor,
                             usesGradient: $useForegroundGradient
@@ -706,6 +707,7 @@ struct ContentView: View {
                         startTitle: t(en: "Start color", zh: "起始色"),
                         endTitle: t(en: "End color", zh: "结束色"),
                         gradientTitle: t(en: "Gradient", zh: "渐变"),
+                        randomTitle: t(en: "Randomize colors", zh: "随机颜色"),
                         startColor: $backgroundColor,
                         endColor: $secondaryBackgroundColor,
                         usesGradient: $useGradient
@@ -1374,12 +1376,23 @@ struct ContentView: View {
 
 private struct ColorSettingRow: View {
     let title: String
+    let randomTitle: String
     @Binding var color: Color
 
     var body: some View {
         HStack {
             Text(title)
             Spacer()
+            Button {
+                color = .randomIconColor()
+            } label: {
+                Image(systemName: "dice")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .help(randomTitle)
+            .accessibilityLabel(randomTitle)
+
             ColorPicker(title, selection: $color, supportsOpacity: true)
                 .labelsHidden()
         }
@@ -1391,6 +1404,7 @@ private struct GradientColorSection: View {
     let startTitle: String
     let endTitle: String
     let gradientTitle: String
+    let randomTitle: String
     @Binding var startColor: Color
     @Binding var endColor: Color
     @Binding var usesGradient: Bool
@@ -1403,18 +1417,41 @@ private struct GradientColorSection: View {
 
                 Spacer()
 
+                if usesGradient {
+                    Button {
+                        startColor = .randomIconColor()
+                        endColor = .randomIconColor()
+                    } label: {
+                        Image(systemName: "dice.fill")
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                    .help(randomTitle)
+                    .accessibilityLabel(randomTitle)
+                }
+
                 Toggle(gradientTitle, isOn: $usesGradient)
                     .toggleStyle(.switch)
                     .labelsHidden()
                     .help(gradientTitle)
             }
 
-            ColorSettingRow(title: startTitle, color: $startColor)
+            ColorSettingRow(title: startTitle, randomTitle: randomTitle, color: $startColor)
 
             if usesGradient {
-                ColorSettingRow(title: endTitle, color: $endColor)
+                ColorSettingRow(title: endTitle, randomTitle: randomTitle, color: $endColor)
             }
         }
+    }
+}
+
+private extension Color {
+    static func randomIconColor() -> Color {
+        Color(
+            red: Double.random(in: 0...1),
+            green: Double.random(in: 0...1),
+            blue: Double.random(in: 0...1)
+        )
     }
 }
 
