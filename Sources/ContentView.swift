@@ -150,6 +150,7 @@ struct ContentView: View {
     @State private var fluentEmojiStyle: FluentEmojiStyle = .threeD
     @State private var fluentEmojiInitialFilter = ""
     @State private var selectedFluentEmojiAssetPath = ""
+    @State private var fluentEmojiRandomScrollTarget = ""
     @State private var exportPlatforms: Set<IconRenderer.ExportPlatform> = Set(IconRenderer.ExportPlatform.allCases)
     @State private var exportMessage = ""
     @State private var exportSucceeded = false
@@ -596,8 +597,19 @@ struct ContentView: View {
                 }
             }
 
-            TextField(t(en: "Search Fluent Emoji", zh: "搜索 Fluent Emoji"), text: $fluentEmojiQuery)
-                .textFieldStyle(.roundedBorder)
+            HStack(spacing: 8) {
+                TextField(t(en: "Search Fluent Emoji", zh: "搜索 Fluent Emoji"), text: $fluentEmojiQuery)
+                    .textFieldStyle(.roundedBorder)
+
+                Button(action: randomizeFluentEmojiSelection) {
+                    Image(systemName: "dice")
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .disabled(activeFluentEmojiAssets.isEmpty)
+                .help(t(en: "Random Fluent Emoji", zh: "随机 Fluent Emoji"))
+                .accessibilityLabel(t(en: "Random Fluent Emoji", zh: "随机 Fluent Emoji"))
+            }
 
             FluentEmojiLetterFilter(
                 initials: groupedFilteredFluentEmojiAssets.map(\.initial),
@@ -607,29 +619,42 @@ struct ContentView: View {
                 fluentEmojiInitialFilter = initial
             }
 
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(activeFluentEmojiInitial.isEmpty ? t(en: "All", zh: "全部") : activeFluentEmojiInitial)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 2)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(activeFluentEmojiInitial.isEmpty ? t(en: "All", zh: "全部") : activeFluentEmojiInitial)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 2)
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 86), spacing: 10)], spacing: 10) {
-                        ForEach(activeFluentEmojiAssets) { asset in
-                            FluentEmojiPickerCell(
-                                asset: asset,
-                                isTemplate: fluentEmojiStyle.usesForegroundColor,
-                                isSelected: asset.imageURL.path == selectedFluentEmojiAssetPath
-                            ) {
-                                withTransaction(Transaction(animation: nil)) {
-                                    selectedFluentEmojiAssetPath = asset.imageURL.path
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 86), spacing: 10)], spacing: 10) {
+                            ForEach(activeFluentEmojiAssets) { asset in
+                                FluentEmojiPickerCell(
+                                    asset: asset,
+                                    isTemplate: fluentEmojiStyle.usesForegroundColor,
+                                    isSelected: asset.imageURL.path == selectedFluentEmojiAssetPath
+                                ) {
+                                    withTransaction(Transaction(animation: nil)) {
+                                        selectedFluentEmojiAssetPath = asset.imageURL.path
+                                    }
                                 }
+                                .id(asset.id)
                             }
                         }
                     }
+                    .padding(1)
+                    .padding(.trailing, 8)
                 }
-                .padding(1)
                 .background(FluentEmojiScrollerAccessor())
+                .onChange(of: fluentEmojiRandomScrollTarget) { _, target in
+                    guard !target.isEmpty else { return }
+                    DispatchQueue.main.async {
+                        withTransaction(Transaction(animation: nil)) {
+                            proxy.scrollTo(target, anchor: .center)
+                        }
+                        fluentEmojiRandomScrollTarget = ""
+                    }
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(1)
@@ -1066,6 +1091,14 @@ struct ContentView: View {
         guard fluentEmojiIndex == nil, isFluentEmojiFolderValid else { return }
         fluentEmojiIndex = FluentEmojiIndex.load(folderPath: fluentEmojiFolderPath)
         fluentEmojiIndexExists = fluentEmojiIndex != nil
+    }
+
+    private func randomizeFluentEmojiSelection() {
+        guard let asset = activeFluentEmojiAssets.randomElement() else { return }
+        withTransaction(Transaction(animation: nil)) {
+            selectedFluentEmojiAssetPath = asset.imageURL.path
+        }
+        fluentEmojiRandomScrollTarget = asset.id
     }
 
     private func openSFSymbolsApp() {
