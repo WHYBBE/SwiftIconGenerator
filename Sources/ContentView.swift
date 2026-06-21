@@ -125,6 +125,29 @@ struct ContentView: View {
         }
     }
 
+    private struct PreviewRenderState: Equatable {
+        var iconMode: IconMode
+        var symbolName: String
+        var emoji: String
+        var foregroundColor: ColorValue
+        var useForegroundGradient: Bool
+        var secondaryForegroundColor: ColorValue
+        var foregroundGradientAngle: Double
+        var backgroundColor: ColorValue
+        var useGradient: Bool
+        var secondaryBackgroundColor: ColorValue
+        var backgroundGradientAngle: Double
+        var cornerRadiusRatio: Double
+        var contentPaddingRatio: Double
+        var symbolScaleRatio: Double
+        var contentOffsetXRatio: Double
+        var contentOffsetYRatio: Double
+        var shadowStrength: Double
+        var shadowAngle: Double
+        var fluentEmojiAssetPath: String
+        var fluentEmojiStyle: FluentEmojiStyle
+    }
+
     @State private var symbolName = "sparkles"
     @State private var symbolQuery = ""
     @State private var iconMode: IconMode = .sfSymbol
@@ -164,6 +187,11 @@ struct ContentView: View {
     @State private var fluentEmojiIndex: FluentEmojiIndex?
     @State private var sfSymbolsMessage = ""
     @State private var sfSymbolsMessageIsError = false
+    @State private var previewImage: NSImage?
+    @State private var pendingPreviewRender: DispatchWorkItem?
+    @State private var filteredSymbolNames = SFSymbolCatalog.all
+    @State private var cachedFilteredFluentEmojiAssets: [FluentEmojiAsset] = []
+    @State private var cachedGroupedFluentEmojiAssets: [FluentEmojiAssetGroup] = []
     @AppStorage("appTheme") private var appTheme = AppTheme.system
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system
     @AppStorage("exportPlatforms") private var storedExportPlatforms = Self.defaultExportPlatformRawValues
@@ -183,15 +211,7 @@ struct ContentView: View {
     private let panelContentSpacing: CGFloat = 12
 
     private var filteredSymbols: [String] {
-        let trimmedQuery = symbolQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmedQuery.isEmpty else {
-            return SFSymbolCatalog.all
-        }
-
-        return SFSymbolCatalog.all.filter {
-            $0.localizedCaseInsensitiveContains(trimmedQuery)
-        }
+        filteredSymbolNames
     }
 
     private var availableIconModes: [IconMode] {
@@ -203,34 +223,11 @@ struct ContentView: View {
     }
 
     private var filteredFluentEmojiAssets: [FluentEmojiAsset] {
-        let trimmedQuery = fluentEmojiQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmedQuery.isEmpty else {
-            return fluentEmojiAssets
-        }
-
-        return fluentEmojiAssets.filter {
-            $0.name.localizedCaseInsensitiveContains(trimmedQuery)
-        }
+        cachedFilteredFluentEmojiAssets
     }
 
     private var groupedFilteredFluentEmojiAssets: [FluentEmojiAssetGroup] {
-        let groups = Dictionary(grouping: filteredFluentEmojiAssets) { asset in
-            fluentEmojiInitial(for: asset.name)
-        }
-
-        return groups
-            .map { group in
-                FluentEmojiAssetGroup(
-                    initial: group.key,
-                    assets: group.value.sorted(by: fluentEmojiAssetSort)
-                )
-            }
-            .sorted { lhs, rhs in
-                if lhs.initial == "#" { return false }
-                if rhs.initial == "#" { return true }
-                return lhs.initial.localizedCaseInsensitiveCompare(rhs.initial) == .orderedAscending
-            }
+        cachedGroupedFluentEmojiAssets
     }
 
     private var activeFluentEmojiInitial: String {
@@ -247,7 +244,7 @@ struct ContentView: View {
 
     private var activeFluentEmojiAssets: [FluentEmojiAsset] {
         if activeFluentEmojiInitial.isEmpty {
-            return filteredFluentEmojiAssets.sorted(by: fluentEmojiAssetSort)
+            return filteredFluentEmojiAssets
         }
 
         return groupedFilteredFluentEmojiAssets.first { $0.initial == activeFluentEmojiInitial }?.assets ?? []
@@ -293,11 +290,24 @@ struct ContentView: View {
                 applyVisualSizePreset(visualSizePreset)
                 loadExportPlatforms()
                 refreshFluentEmojiAvailability()
+                refreshSymbolFilter()
+                refreshFluentEmojiFilter()
                 focusedField = .symbolName
+                schedulePreviewImageRender()
             }
+        }
+        .onChange(of: previewRenderState) { _, _ in
+            schedulePreviewImageRender()
         }
         .onChange(of: exportPlatforms) { _, newPlatforms in
             saveExportPlatforms(newPlatforms)
+        }
+        .onChange(of: symbolQuery) { _, _ in
+            refreshSymbolFilter()
+        }
+        .onDisappear {
+            pendingPreviewRender?.cancel()
+            pendingPreviewRender = nil
         }
         .onChange(of: fluentEmojiFolderPath) { _, _ in
             fluentEmojiIndex = nil
@@ -310,6 +320,8 @@ struct ContentView: View {
             if selectedFluentEmojiAsset == nil {
                 selectedFluentEmojiAssetPath = fluentEmojiAssets.first?.imageURL.path ?? ""
             }
+
+            refreshFluentEmojiFilter()
         }
         .onChange(of: fluentEmojiIndexVersion) { _, _ in
             fluentEmojiIndex = nil
@@ -318,6 +330,8 @@ struct ContentView: View {
                 loadFluentEmojiIndexIfNeeded()
                 selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
             }
+
+            refreshFluentEmojiFilter()
         }
         .alert(
             t(en: "Delete Project", zh: "删除项目"),
@@ -487,6 +501,7 @@ struct ContentView: View {
             case .fluentEmoji:
                 focusedField = nil
                 loadFluentEmojiIndexIfNeeded()
+                refreshFluentEmojiFilter()
                 selectedFluentEmojiAssetPath = selectedFluentEmojiAsset?.imageURL.path ?? ""
             }
         }
@@ -595,6 +610,8 @@ struct ContentView: View {
                 } else {
                     selectedFluentEmojiAssetPath = newStyleAssets.first?.imageURL.path ?? ""
                 }
+
+                refreshFluentEmojiFilter()
             }
 
             HStack(spacing: 8) {
@@ -660,6 +677,7 @@ struct ContentView: View {
             .padding(1)
         }
         .onChange(of: fluentEmojiQuery) { _, _ in
+            refreshFluentEmojiFilter()
             if !groupedFilteredFluentEmojiAssets.contains(where: { $0.initial == fluentEmojiInitialFilter }) {
                 fluentEmojiInitialFilter = ""
             }
@@ -842,7 +860,6 @@ struct ContentView: View {
     private var previewPanel: some View {
         GeometryReader { proxy in
             let contentWidth = max(proxy.size.width - (panelPadding * 2), 120)
-            let previewImage = makePreviewImage(size: 196)
 
             VStack(spacing: panelContentSpacing) {
                 panelTitle(t(en: "Preview", zh: "预览"))
@@ -1059,6 +1076,45 @@ struct ContentView: View {
         try? makeRenderer().render(size: size)
     }
 
+    private var previewRenderState: PreviewRenderState {
+        PreviewRenderState(
+            iconMode: iconMode,
+            symbolName: symbolName,
+            emoji: emoji,
+            foregroundColor: ColorValue(color: foregroundColor),
+            useForegroundGradient: useForegroundGradient,
+            secondaryForegroundColor: ColorValue(color: secondaryForegroundColor),
+            foregroundGradientAngle: foregroundGradientAngle,
+            backgroundColor: ColorValue(color: backgroundColor),
+            useGradient: useGradient,
+            secondaryBackgroundColor: ColorValue(color: secondaryBackgroundColor),
+            backgroundGradientAngle: backgroundGradientAngle,
+            cornerRadiusRatio: cornerRadiusRatio,
+            contentPaddingRatio: contentPaddingRatio,
+            symbolScaleRatio: symbolScaleRatio,
+            contentOffsetXRatio: contentOffsetXRatio,
+            contentOffsetYRatio: contentOffsetYRatio,
+            shadowStrength: shadowStrength,
+            shadowAngle: shadowAngle,
+            fluentEmojiAssetPath: selectedFluentEmojiAssetPath,
+            fluentEmojiStyle: fluentEmojiStyle
+        )
+    }
+
+    private func schedulePreviewImageRender() {
+        pendingPreviewRender?.cancel()
+
+        let renderState = previewRenderState
+        let workItem = DispatchWorkItem {
+            guard renderState == previewRenderState else { return }
+            previewImage = makePreviewImage(size: 196)
+            pendingPreviewRender = nil
+        }
+
+        pendingPreviewRender = workItem
+        DispatchQueue.main.async(execute: workItem)
+    }
+
     private var iconContent: IconRenderer.IconContent {
         switch iconMode {
         case .sfSymbol:
@@ -1126,6 +1182,45 @@ struct ContentView: View {
         guard fluentEmojiIndex == nil, isFluentEmojiFolderValid else { return }
         fluentEmojiIndex = FluentEmojiIndex.load(folderPath: fluentEmojiFolderPath)
         fluentEmojiIndexExists = fluentEmojiIndex != nil
+    }
+
+    private func refreshSymbolFilter() {
+        let trimmedQuery = symbolQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedQuery.isEmpty else {
+            filteredSymbolNames = SFSymbolCatalog.all
+            return
+        }
+
+        filteredSymbolNames = SFSymbolCatalog.all.filter {
+            $0.localizedCaseInsensitiveContains(trimmedQuery)
+        }
+    }
+
+    private func refreshFluentEmojiFilter() {
+        let assets = fluentEmojiAssets
+        let trimmedQuery = fluentEmojiQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filteredAssets = trimmedQuery.isEmpty
+            ? assets
+            : assets.filter { $0.name.localizedCaseInsensitiveContains(trimmedQuery) }
+        let sortedAssets = filteredAssets.sorted(by: fluentEmojiAssetSort)
+        let groups = Dictionary(grouping: sortedAssets) { asset in
+            fluentEmojiInitial(for: asset.name)
+        }
+
+        cachedFilteredFluentEmojiAssets = sortedAssets
+        cachedGroupedFluentEmojiAssets = groups
+            .map { group in
+                FluentEmojiAssetGroup(
+                    initial: group.key,
+                    assets: group.value
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.initial == "#" { return false }
+                if rhs.initial == "#" { return true }
+                return lhs.initial.localizedCaseInsensitiveCompare(rhs.initial) == .orderedAscending
+            }
     }
 
     private func randomizeFluentEmojiSelection() {
