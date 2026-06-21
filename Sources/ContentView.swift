@@ -722,6 +722,32 @@ struct ContentView: View {
                             symbolScaleRatio = visualSizePreset.symbolScaleRatio
                         }
 
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(t(en: "Position presets", zh: "位置预设"))
+
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 58), spacing: 6)], spacing: 6) {
+                                PositionPresetButton(symbolName: "arrow.up.left", title: t(en: "Top left", zh: "左上")) {
+                                    applyContentPositionPreset(x: -safeContentPositionOffset, y: safeContentPositionOffset)
+                                }
+
+                                PositionPresetButton(symbolName: "arrow.up.right", title: t(en: "Top right", zh: "右上")) {
+                                    applyContentPositionPreset(x: safeContentPositionOffset, y: safeContentPositionOffset)
+                                }
+
+                                PositionPresetButton(symbolName: "scope", title: t(en: "Center", zh: "中间")) {
+                                    applyContentPositionPreset(x: 0, y: 0)
+                                }
+
+                                PositionPresetButton(symbolName: "arrow.down.left", title: t(en: "Bottom left", zh: "左下")) {
+                                    applyContentPositionPreset(x: -safeContentPositionOffset, y: -safeContentPositionOffset)
+                                }
+
+                                PositionPresetButton(symbolName: "arrow.down.right", title: t(en: "Bottom right", zh: "右下")) {
+                                    applyContentPositionPreset(x: safeContentPositionOffset, y: -safeContentPositionOffset)
+                                }
+                            }
+                        }
+
                         SliderSettingRow(
                             title: t(en: "Horizontal position", zh: "水平位置"),
                             value: $contentOffsetXRatio,
@@ -855,6 +881,15 @@ struct ContentView: View {
         ) {
             value.wrappedValue = resetValue
         }
+    }
+
+    private var safeContentPositionOffset: Double {
+        min(max(0.5 - contentPaddingRatio - (symbolScaleRatio / 2), 0), 0.35)
+    }
+
+    private func applyContentPositionPreset(x: Double, y: Double) {
+        contentOffsetXRatio = x
+        contentOffsetYRatio = y
     }
 
     private func previewContent(previewImage: NSImage?, contentWidth: CGFloat, contentHeight: CGFloat) -> some View {
@@ -1549,6 +1584,26 @@ private struct SliderSettingRow: View {
 
             Slider(value: $value, in: range)
         }
+    }
+}
+
+private struct PositionPresetButton: View {
+    let symbolName: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbolName)
+                .font(.system(size: 11, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 22)
+                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .help(title)
+        .accessibilityLabel(title)
     }
 }
 
